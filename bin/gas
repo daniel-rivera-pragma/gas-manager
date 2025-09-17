@@ -9,4 +9,4 @@ declare command_action="default"
 [ ${#command_array[@]} -gt 1 ] && command_action="${command_array[1]}"
 declare command_path="${root_dir}/src/cmd/${command_name}/${command_action}.sh"
 [ ! -f "${command_path}" ] && echo "ERR~ Command '${command}' not found" >&2 && exit 1
-bash "${command_path}" "${root_dir}" ${@}
+bash "${command_path}" "${root_dir}" "${@}"
