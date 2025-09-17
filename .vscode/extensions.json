@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "foxundermoon.shell-format@7.2.5",
+    "davidanson.vscode-markdownlint",
+    "esbenp.prettier-vscode"
+  ]
+}
