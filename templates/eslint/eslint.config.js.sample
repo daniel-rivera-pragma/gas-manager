@@ -10,7 +10,9 @@ import jestPlugin from 'eslint-plugin-jest'
 import globals from 'globals'
 
 const IGNORE_PATHS = ['node_modules/', 'coverage/', '.vscode/', '.gemini/']
-const RESOLVED_IGNORE_PATHS = IGNORE_PATHS.map((ignorePath) => path.resolve(ignorePath.replace(/\/$/, '')))
+const RESOLVED_IGNORE_PATHS = IGNORE_PATHS.map((ignorePath) =>
+  path.resolve(ignorePath.replace(/\/$/, ''))
+)
 const GAS_GLOBALS = ['doGet']
 
 /**
@@ -78,7 +80,7 @@ async function buildConfig() {
       ignores: IGNORE_PATHS,
     },
     {
-      files: ['src/**/*.{js,ts}'],
+      files: ['**/*.{js,ts}'],
       plugins: {
         jsdoc: jsdoc,
         prettier: prettierPlugin,
@@ -109,7 +111,7 @@ async function buildConfig() {
       },
     },
     {
-      files: ['tests/**/*.test.js'],
+      files: ['**/*.test.js'],
       plugins: {
         jest: jestPlugin,
       },

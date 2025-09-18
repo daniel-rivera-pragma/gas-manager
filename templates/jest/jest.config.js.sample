@@ -2,7 +2,7 @@
 const config = {
   testEnvironment: 'node',
   roots: ['<rootDir>'],
-  testMatch: ['tests/**/*.test.js'],
+  testMatch: ['**/*.test.js'],
   clearMocks: true,
 }
 
