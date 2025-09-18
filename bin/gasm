@@ -1,12 +1,13 @@
 #!/bin/bash
 set -euo pipefail
-declare root_dir="$(pwd)/${0/%gas/..}"
+declare root_dir=~/.gasm
+[ ! -d "${root_dir}" ] && echo "ERR~ gasm main folder not found" >&2 && exit 1
 [ ${#} -eq 0 ] && echo "ERR~ No parameters received" >&2 && exit 1
 declare command="${1}" && shift
 declare command_array=(${command//:/ })
 declare command_name="${command_array[0]}"
 declare command_action="default"
 [ ${#command_array[@]} -gt 1 ] && command_action="${command_array[1]}"
-declare command_path="${root_dir}/src/cmd/${command_name}/${command_action}.sh"
+declare command_path="${root_dir}/cmd/${command_name}/${command_action}.sh"
 [ ! -f "${command_path}" ] && echo "ERR~ Command '${command}' not found" >&2 && exit 1
 bash "${command_path}" "${root_dir}" "${@}"
