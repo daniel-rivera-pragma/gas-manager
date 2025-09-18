@@ -2,38 +2,22 @@
 
 Este manual aborda los principales aspectos para el correcto uso de este artefacto.
 
-## Requerimientos Previos
+## Creando una Nueva Aplicación
 
-Este artefacto, asume que los siguientes elementos fueron previamente instalados:
-
-### 1. Gestor de Versiones de Node (NVM)
-
-Recomendamos encarecidamente usar [NVM (Node Version Manager)](https://github.com/nvm-sh/nvm) para gestionar las versiones de Node.js y evitar conflictos entre proyectos. Para instalarlo, puedes seguir las instrucciones en su repositorio.
-
-Una vez instalado, instala y utiliza la versión LTS más reciente de Node.js:
-
-```bash
-# Instala la última versión LTS (ej. 20.x)
-nvm install --lts
-
-# Establece la versión recién instalada como la predeterminada
-nvm use --lts
-nvm alias default 'lts/*'
-
-# Actualiza la version de NPM
-nvm install --latest-npm
-```
-
-### 2. Herramientas de Línea de Comandos
-
-- **`@google/clasp`**: La herramienta oficial para gestionar proyectos de Google AppsScript. Instálala de forma global vía npm:
+1. **Crea un nuevo proyecto en Google Apps Script:** Ve a [script.google.com](https://script.google.com) y crea un nuevo proyecto. Anota su **Script ID** desde la configuración del proyecto.
+2. **Inicializa el proyecto con el comando `gasm`:**
 
     ```bash
-    npm install -g @google/clasp
+    # Ubicarse en la ruta donde quiere crear el proyecto
+    gasm init <nombre-app>
     ```
 
-- **Gemini CLI**: Esta herramienta se utiliza para interactuar con el asistente de IA que apoya este proyecto. Instálala de forma global vía npm:
+3. **Inicializa el proyecto con `clasp`:**
+    Una vez que tengas el Script ID de tu nuevo proyecto de Apps Script, navega a la carpeta de tu nueva aplicación y usa `clasp clone` para inicializarla. Esto creará el archivo `.clasp.json` y descargará el `appsscript.json`.
 
     ```bash
-    npm install -g @google/gemini-cli
+    cd <nombre-app>
+    clasp clone "TU_SCRIPT_ID" --rootDir src
     ```
+
+    Asegúrate de reemplazar `"TU_SCRIPT_ID"` con el ID real de tu proyecto. El `appsscript.json` es crucial para la configuración del proyecto en Google Apps Script.
