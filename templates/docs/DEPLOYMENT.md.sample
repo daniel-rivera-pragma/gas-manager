@@ -1,0 +1,112 @@
+# Guía de Despliegue
+
+Este documento explica cómo desplegar las aplicaciones de Google Apps Script usando `clasp`.
+
+## `clasp`: La Herramienta Clave
+
+`clasp` (Command Line Apps Script Projects) es la herramienta oficial para gestionar proyectos de Google Apps Script localmente. Nos permite usar nuestras propias herramientas de desarrollo (como Git, VS Code, etc.) y luego "empujar" el código a los servidores de Google.
+
+### Configuración de la Aplicación
+
+Cada aplicación de Google AppsScript tiene un archivo de configuración `.clasp.json`. Este archivo le dice a `clasp` dos cosas importantes:
+
+- `scriptId`: El identificador único del proyecto en la plataforma de Google Apps Script.
+- `rootDir`: El directorio local que contiene el código fuente que se debe subir.
+
+```json
+// .clasp.json
+{
+  "scriptId": "1gih6qgzRSYF-2ThVWYDbD8KqiOR0JsNYBIehauaAkIyzgnmxhKkPUlhc",
+  "rootDir": "src"
+}
+```
+
+### El Manifiesto de la Aplicación (`appsscript.json`)
+
+Otro archivo crucial en la configuración de cada aplicación es `appsscript.json`, ubicado en el `rootDir` (normalmente `src/`). Este archivo de manifiesto define metadatos esenciales del proyecto que Google Apps Script utiliza para su ejecución.
+
+Algunas de sus configuraciones clave incluyen:
+
+- `timeZone`: La zona horaria del proyecto.
+- `dependencies`: Las librerías y servicios avanzados de Google que utiliza el script.
+- `webapp`: La configuración para aplicaciones web, como el punto de entrada y el modo de ejecución.
+- `oauthScopes`: Los permisos de OAuth que el script solicitará al usuario.
+
+Es vital entender y configurar correctamente este archivo, ya que un error en él puede impedir que la aplicación se despliegue o se ejecute como se espera.
+
+Para una referencia completa sobre todas las propiedades disponibles en el manifiesto, consulta la [documentación oficial de Google](https://developers.google.com/apps-script/manifest).
+
+## Proceso de Despliegue
+
+**Nota Importante:** El proceso de despliegue está centralizado y es manejado por un rol específico. Los desarrolladores no deben ejecutar estos comandos. La siguiente guía es para documentar el proceso.
+
+El flujo de despliegue es un proceso secuencial que garantiza que cada versión desplegada sea estable y esté correctamente registrada.
+
+### Paso 1: Sincronizar el Código (`push`)
+
+Sube la versión más reciente del código desde el directorio local (`rootDir`) al proyecto de Google Apps Script en la nube.
+
+```bash
+# Situarse en la raiz de la app
+clasp push --force
+```
+
+`clasp` pedirá confirmación antes de sobrescribir los archivos existentes en el script remoto.
+
+### Paso 2: Crear una Nueva Versión (`version`)
+
+Crea una "fotografía" inmutable del código actual del proyecto. Para mantener un registro claro, se adopta un sistema de versionado semántico (SemVer).
+
+**Formato del Mensaje:**
+`v<MAJOR>.<MINOR>.<PATCH> - Descripción breve de los cambios.`
+
+- **MAJOR:** Se incrementa para cambios incompatibles con la API.
+- **MINOR:** Se incrementa para añadir funcionalidad compatible con versiones anteriores.
+- **PATCH:** Se incrementa para correcciones de errores compatibles con versiones anteriores.
+
+**Ejemplo de comando:**
+
+```bash
+# El comando se ejecuta de forma no interactiva proveyendo la descripción directamente.
+clasp version "v1.1.0 - Se añade exportación a PDF."
+```
+
+### Paso 3: Desplegar la Versión (`deploy`)
+
+Asigna la versión recién creada a un despliegue existente para publicarla.
+
+Primero, lista los despliegues para obtener el `deploymentId` del entorno de producción:
+
+```bash
+clasp deployments
+```
+
+Este comando mostrará una tabla con los despliegues, sus IDs y la versión que tienen actualmente.
+
+Luego, usa el `deploymentId` y el número de la nueva versión para actualizar el despliegue:
+
+```bash
+# Reemplaza <deploymentId> y <versionNumber> con los valores correctos
+clasp deploy -i <deploymentId> -V <versionNumber> -d v1.1.0
+```
+
+Este comando actualiza la URL de la aplicación web o el complemento para que sirva el código de la nueva versión.
+
+### Paso 4: Etiquetar la Versión en Git (`tag`)
+
+Solo después de un despliegue exitoso, se debe crear una etiqueta (tag) en Git. Esto marca el commit exacto que está en producción, asegurando una trazabilidad perfecta.
+
+Se utilizarán tags ligeros (lightweight tags).
+
+**Convención del Tag:**
+`v<MAJOR>.<MINOR>.<PATCH>`
+
+**Ejemplos de comando:**
+
+```bash
+# Crear un tag ligero para la v1.1.0 de la aplicacion
+git tag v1.1.0
+
+# Sube los tags al origen
+git push --tags
+```

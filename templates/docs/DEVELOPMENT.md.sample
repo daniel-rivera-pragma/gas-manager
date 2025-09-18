@@ -1,0 +1,82 @@
+# Guía de Desarrollo
+
+Esta guía te ayudará a entender la estructura del proyecto y a desarrollar nuevas funcionalidades o contribuir a las existentes.
+
+## Estructura del Proyecto
+
+- `/src`: El código fuente (`.js`, `.html`) de la aplicación.
+- `/tests`: Las pruebas unitarias para la aplicación.
+- `/.clasp.json`: La configuración de `clasp` para esa aplicación, enlazándola a un Script ID de Google.
+- `/docs`: Documentación detallada del proyecto.
+- `/types`: Definiciones de tipos de TypeScript (`.d.ts`) que son globales para todo el proyecto.
+
+## Escribiendo el Código Fuente
+
+Las aplicaciones de Google AppsScript usan archivo `.gs`, sin embargo, `clasp` permite que se pueda trabajar con archivos `.js` y además que se pueda organizar el proyecto en carpetas dentro de `src`. Un ejemplo de un archivo que se ubicaría en `src` sería:
+
+```javascript
+// src/app.js
+/** @returns {GoogleAppsScript.HTML.HtmlOutput} */
+function doGet() {
+  const page = HtmlService.createHtmlOutputFromFile('index')
+  page.setTitle('Sample App Title')
+  page.setFaviconUrl('https://sample-app/favicon.png')
+  return page
+}
+```
+
+## Escribiendo Pruebas
+
+Utilizamos Jest para las pruebas. Para simular el entorno de Google Apps Script, "mockeamos" los servicios globales. Los pasos clave son:
+
+1. **Importar dependencias:** `fs`, `path`, `vm` y los globales de `@jest/globals`.
+2. **Crear un contexto mock:** Crea un objeto que simule los servicios de Google que necesitas (ej. `HtmlService`).
+3. **Leer y ejecutar el script:** Usa `fs.readFileSync` para leer el contenido de tu archivo `.js` y `vm.runInContext` para ejecutarlo dentro del contexto mockeado.
+4. **Escribir los casos de prueba:** Usa `it(...)` y `expect(...)` de Jest para verificar que tu código se comporta como esperas.
+
+Un ejemplo de como se vería un archivo de test sería lo siguiente:
+
+```javascript
+// test/app.test.js
+import {jest, describe, it, expect, beforeEach, beforeAll} from '@jest/globals'
+import fs from 'fs'
+import path from 'path'
+import vm from 'vm'
+
+// Inicio de pruebas unitarias
+describe('app.js::doGet', () => {
+  const mockPage = { setTitle: jest.fn(), setFaviconUrl: jest.fn() }
+  const mockHtmlService = { createHtmlOutputFromFile: jest.fn().mockReturnValue(mockPage) }
+
+  /**
+   * @type {{
+   *  HtmlService: object
+   *  doGet: () => GoogleAppsScript.HTML.HtmlOutput
+   * }}
+   */
+  const context = {
+    HtmlService: mockHtmlService,
+    doGet: () => { throw new Error('Función doGet no inicializada por el test') },
+  }
+
+  beforeAll(() => {
+    const scriptPath = path.resolve(process.cwd(), 'src/app.js')
+    const scriptContent = fs.readFileSync(scriptPath, 'utf-8')
+    vm.createContext(context)
+    vm.runInContext(scriptContent, context)
+  })
+
+  beforeEach(() => { jest.clearAllMocks() })
+
+  it('must call createHtmlOutputFromFile with "index"', () => {
+    context.doGet()
+    expect(mockHtmlService.createHtmlOutputFromFile).toHaveBeenCalledWith('index')
+  })
+})
+```
+
+Para ejecutar las pruebas:
+
+```bash
+npm run test
+```

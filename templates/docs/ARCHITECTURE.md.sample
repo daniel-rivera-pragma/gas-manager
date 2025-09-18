@@ -1,0 +1,51 @@
+# Arquitectura del Proyecto
+
+Este documento describe la arquitectura "Vanilla JSDoc" adoptada para las apps de Google AppsScript.
+
+## Principios Fundamentales
+
+El objetivo es mantener un entorno de desarrollo simple, moderno y fácil de mantener, sin la necesidad de un paso de compilación o empaquetado, lo que es ideal para el desarrollo con Google Apps Script.
+
+1. **JavaScript Puro (`.js`):** Todo el código de la aplicación se escribe en JavaScript estándar (ECMAScript moderno). No se utiliza TypeScript en la sintaxis del código fuente.
+2. **Sin Compilación:** No hay herramientas como Webpack, Rollup o Babel para transpilar el código. Lo que se escribe es lo que se despliega.
+3. **Modularidad Global:** El proyecto no utiliza módulos de ES (`import`/`export`). Todas las aplicaciones y funciones coexisten en el ámbito global de Google Apps Script. Para evitar colisiones de nombres, se fomenta el uso de objetos como `namespaces` (ej. `const MiApp = { miFuncion: () => {} };`).
+
+## Sistema de Tipos con JSDoc
+
+Para tener las ventajas del tipado estático (como autocompletado y detección de errores) sin usar TypeScript directamente, empleamos un sistema híbrido:
+
+- **Definición de Tipos (`.d.ts`):** Los tipos complejos, interfaces y firmas de funciones globales se definen en archivos de declaración de TypeScript (`.d.ts`). Estos archivos deben estar en el directorio `/types` de la raíz, se recomienda definirlos en un archivo `app.d.ts`.
+- **Asignación de Tipos:** Los tipos se aplican al código JavaScript a través de comentarios JSDoc. Visual Studio Code y otros editores modernos leen estos comentarios para proporcionar un potente Intellisense.
+
+    ```typescript
+    // types/app.d.ts
+    interface OpcionConfiguracion {
+      id: string
+      valor: string
+    }
+    ```
+
+    ```javascript
+    // src/app.js
+    /**
+     * Aplica una configuración específica.
+     * @param {OpcionConfiguracion} opcion La opción a aplicar.
+     * @returns {boolean} True si la operación fue exitosa.
+     */
+    function aplicarConfiguracion(opcion) {
+      // ...
+      return true;
+    }
+    ```
+
+## Calidad de Código
+
+- **ESLint:** Se utiliza para analizar el código y encontrar problemas. Está configurado para entender el entorno de Google Apps Script y para validar la sintaxis de los comentarios JSDoc (`eslint-plugin-jsdoc`).
+- **Prettier:** Garantiza un formato de código consistente en todo el proyecto.
+- **`jsconfig.json`:** Este archivo es clave. Le dice a VS Code que trate los archivos `.js` como parte de un proyecto de JavaScript con superpoderes, habilitando la validación de tipos estricta basada en los comentarios JSDoc.
+
+## Pruebas Unitarias
+
+Las pruebas se realizan con **Jest**. Dado que el código depende de servicios globales de Google Apps Script (como `HtmlService` o `SpreadsheetApp`) que no existen en un entorno de Node.js, utilizamos el módulo `vm` de Node.js para crear un "sandbox".
+
+En cada archivo de prueba, creamos un contexto (`context`) donde "mockeamos" (simulamos) los servicios de Google que la función bajo prueba necesita. Luego, ejecutamos el script de la aplicación dentro de este contexto aislado. Esto nos permite probar la lógica de nuestras funciones sin depender del entorno real de Google.
