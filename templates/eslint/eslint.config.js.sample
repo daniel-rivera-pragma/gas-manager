@@ -3,6 +3,7 @@ import path from 'path'
 import { pathToFileURL } from 'url'
 
 import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
 import jsdoc from 'eslint-plugin-jsdoc'
 import prettierPlugin from 'eslint-plugin-prettier'
 import gasPlugin from 'eslint-plugin-googleappsscript'
@@ -80,7 +81,7 @@ async function buildConfig() {
       ignores: IGNORE_PATHS,
     },
     {
-      files: ['**/*.{js,ts}'],
+      files: ['**/*.js'],
       plugins: {
         jsdoc: jsdoc,
         prettier: prettierPlugin,
@@ -108,6 +109,33 @@ async function buildConfig() {
             varsIgnorePattern: globalsPattern,
           },
         ],
+      },
+    },
+    ...tseslint.configs.recommended.map((config) => ({
+      ...config,
+      files: ['**/*.ts'],
+    })),
+    {
+      files: ['**/*.ts'],
+      plugins: {
+        jsdoc: jsdoc,
+        prettier: prettierPlugin,
+      },
+      languageOptions: {
+        parserOptions: {
+          project: './jsconfig.json',
+        },
+        globals: {
+          ...globals.browser,
+          ...globals.node,
+        },
+      },
+      rules: {
+        ...jsdoc.configs['flat/recommended-typescript-flavor'].rules,
+        ...prettierRules,
+        'jsdoc/require-jsdoc': 'off',
+        'jsdoc/require-param-description': 'off',
+        'jsdoc/require-returns-description': 'off',
       },
     },
     {
