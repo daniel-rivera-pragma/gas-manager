@@ -27,7 +27,7 @@
     "lint": "eslint {src,tests}/**/*.{js,ts}",
     "lint:fix": "eslint --fix {src,tests}/**/*.{js,ts}",
     "typecheck": "tsc --noEmit --project jsconfig.json",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests",
     "validate": "npm run format:check && npm run lint && npm run typecheck && npm run test"
   }
 }
