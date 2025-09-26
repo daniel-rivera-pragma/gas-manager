@@ -75,9 +75,8 @@ declare tsc_config="jsconfig.json:${root_dir}/templates/tsc/jsconfig.json.sample
 copy_element "${tsc_config}"
 # types
 echo "INF~ Copying Types files" >&2
-declare types_gas="google-apps-script.d.ts:${root_dir}/templates/types/google-apps-script.d.ts.sample:${app_root}/types/google-apps-script.d.ts"
 declare types_mods="modules.d.ts:${root_dir}/templates/types/modules.d.ts.sample:${app_root}/types/modules.d.ts"
-copy_element "${types_gas}" "${types_mods}"
+copy_element "${types_mods}"
 # Update placeholders
 echo "INF~ Update files placeholders"
 declare files_to_replace=("docs/README.md" "package.json" "package-lock.json")
