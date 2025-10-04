@@ -36,7 +36,8 @@ done
 echo "INF~ Copying VSCode files" >&2
 declare vscode_settings="settings.json:${root_dir}/templates/vscode/settings.json.sample:${app_root}/.vscode/settings.json"
 declare vscode_extensions="extensions.json:${root_dir}/templates/vscode/extensions.json.sample:${app_root}/.vscode/extensions.json"
-copy_element "${vscode_settings}" "${vscode_extensions}"
+declare vscode_gas_snippet="google-apps-script.code-snippets:${root_dir}/templates/vscode/google-apps-script.code-snippets.sample:${app_root}/.vscode/google-apps-script.code-snippets"
+copy_element "${vscode_settings}" "${vscode_extensions}" "${vscode_gas_snippet}"
 # docs
 echo "INF~ Copying Documentation files" >&2
 declare docs_arch="ARCHITECTURE.md:${root_dir}/templates/docs/ARCHITECTURE.md.sample:${app_root}/docs/ARCHITECTURE.md"

@@ -1,0 +1,21 @@
+{
+  "JSDoc snippet for HTML script tags": {
+    "scope": "html,javascript",
+    "prefix": "gas-html-script-google",
+    "body": [
+      "/**",
+      " * @typedef {{",
+      " * }} AppFunctions",
+      " * @typedef {{",
+      " *  withSuccessHandler(callback: (result: any, userObject?: object) => void): AppFunctions & ScriptRun",
+      " *  withFailureHandler(callback: (error: Error, userObject?: object) => void): AppFunctions & ScriptRun",
+      " *  withUserObject(userObject: object): AppFunctions & ScriptRun",
+      " * }} ScriptRun",
+      " * @type {{script: {run: AppFunctions & ScriptRun}}}",
+      " */",
+      "const google = window.google",
+      "$0",
+    ],
+    "description": "Insert JSDoc definition and instantiation of google global variable in HTML <script> tags",
+  },
+}
