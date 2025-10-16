@@ -58,7 +58,7 @@ clasp push --force
 Crea una "fotografía" inmutable del código actual del proyecto. Para mantener un registro claro, se adopta un sistema de versionado semántico (SemVer).
 
 **Formato del Mensaje:**
-`v<MAJOR>.<MINOR>.<PATCH> - Descripción breve de los cambios.`
+`v<MAJOR>.<MINOR>.<PATCH>`
 
 - **MAJOR:** Se incrementa para cambios incompatibles con la API.
 - **MINOR:** Se incrementa para añadir funcionalidad compatible con versiones anteriores.
@@ -68,7 +68,7 @@ Crea una "fotografía" inmutable del código actual del proyecto. Para mantener 
 
 ```bash
 # El comando se ejecuta de forma no interactiva proveyendo la descripción directamente.
-clasp version "v1.1.0 - Se añade exportación a PDF."
+clasp version v1.1.0
 ```
 
 ### Paso 3: Desplegar la Versión (`deploy`)
