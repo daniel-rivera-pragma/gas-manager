@@ -15,6 +15,7 @@ const RESOLVED_IGNORE_PATHS = IGNORE_PATHS.map((ignorePath) =>
   path.resolve(ignorePath.replace(/\/$/, ''))
 )
 const GAS_GLOBALS = ['doGet', 'doPost', 'onOpen']
+const LIB_GLOBALS = ['DependencyManager']
 
 /**
  * @param {string} baseDir
@@ -41,7 +42,7 @@ function findGlobalsFiles(baseDir) {
 async function buildGlobals() {
   const globalsFiles = findGlobalsFiles(path.resolve('.'))
   /** @type {string[]} */
-  let allGlobalsArray = GAS_GLOBALS
+  let allGlobalsArray = [...GAS_GLOBALS, ...LIB_GLOBALS]
   for (const globalsFile of globalsFiles) {
     const globalsUrl = pathToFileURL(globalsFile).href
     const { default: globalsArray } = await import(globalsUrl)
