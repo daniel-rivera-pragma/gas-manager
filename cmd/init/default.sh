@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
+# Load functions
 declare root_dir="${1}" && shift
+[ ! -f "${root_dir}/functions/load-functions.sh" ] && echo "ERR~ Functions loader not found" >&2 && exit 1
+source "${root_dir}/functions/load-functions.sh"
+load_functions "${root_dir}" "copy-element" "create-folder" "replace-app-name"
 # Initialize
 echo "INF~ init command started" >&2
 [ ${#} -eq 0 ] && echo "ERR~ A name must be specified to init an app" >&2 && exit 1
@@ -9,16 +13,6 @@ declare app_name="${1}"
 app_name=$(echo "${app_name}" | tr "[:upper:]" "[:lower:]" | sed -E -e "s/^[[:space:]-]*//" -e "s/[[:space:]-]*$//" -e "s/[[:space:]-]+/-/g")
 declare app_root="./${app_name}"
 echo -e "     - App name: ${app_name}\n     - App root: ${app_root}" >&2
-# Copy element function
-declare element
-declare element_info
-function copy_element() {
-  for element in "${@}"; do
-    element_info=(${element//:/ })
-    echo -e "     - ${element_info[0]}\c" >&2
-    cp "${element_info[1]}" "${element_info[2]}" && echo " [OK]" >&2
-  done
-}
 # Scafold
 echo "INF~ Scafolding directories" >&2
 declare dir_app="App:${app_root}"
@@ -27,11 +21,7 @@ declare dir_src="Sources:${app_root}/src"
 declare dir_tests="Tests:${app_root}/tests"
 declare dir_docs="Documentation:${app_root}/docs"
 declare dir_types="Types:${app_root}/types"
-for element in "${dir_app}" "${dir_vscode}" "${dir_src}" "${dir_tests}" "${dir_docs}" "${dir_types}"; do
-  element_info=(${element//:/ })
-  echo -e "     - ${element_info[0]} directory\c" >&2
-  mkdir -p "${element_info[1]}" && echo " [OK]" >&2
-done
+create_folder "${dir_app}" "${dir_vscode}" "${dir_src}" "${dir_tests}" "${dir_docs}" "${dir_types}"
 # .vscode
 echo "INF~ Copying VSCode files" >&2
 declare vscode_settings="settings.json:${root_dir}/templates/vscode/settings.json.sample:${app_root}/.vscode/settings.json"
@@ -79,11 +69,7 @@ echo "INF~ Copying Types files" >&2
 declare types_mods="modules.d.ts:${root_dir}/templates/types/modules.d.ts.sample:${app_root}/types/modules.d.ts"
 copy_element "${types_mods}"
 # Update placeholders
-echo "INF~ Update files placeholders"
-declare files_to_replace=("docs/README.md" "package.json" "package-lock.json")
-for element in "${files_to_replace[@]}"; do
-  echo -e "     - ${element}\c" >&2
-  sed -i -e "s/%APP_NAME%/${app_name}/g" "${app_root}/${element}" && echo " [OK]" >&2
-done
+echo "INF~ Update files placeholders" >&2
+replace_app_name "${app_root}" "${app_name}" "docs/README.md" "package.json" "package-lock.json"
 # End message
-echo "INF~ App created, type 'cd ${app_name}' to start developing"
+echo "INF~ App created, type 'cd ${app_name}' to start developing" >&2
