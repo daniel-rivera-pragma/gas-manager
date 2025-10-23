@@ -17,26 +17,26 @@ Para tener las ventajas del tipado estático (como autocompletado y detección d
 - **Definición de Tipos (`.d.ts`):** Los tipos complejos, interfaces y firmas de funciones globales se definen en archivos de declaración de TypeScript (`.d.ts`). Estos archivos deben estar en el directorio `/types` de la raíz, se recomienda definirlos en un archivo `app.d.ts`.
 - **Asignación de Tipos:** Los tipos se aplican al código JavaScript a través de comentarios JSDoc. Visual Studio Code y otros editores modernos leen estos comentarios para proporcionar un potente Intellisense.
 
-    ```typescript
-    // types/app.d.ts
-    interface OpcionConfiguracion {
-      id: string
-      valor: string
-    }
-    ```
+  ```typescript
+  // types/app.d.ts
+  interface OpcionConfiguracion {
+    id: string
+    valor: string
+  }
+  ```
 
-    ```javascript
-    // src/app.js
-    /**
-     * Aplica una configuración específica.
-     * @param {OpcionConfiguracion} opcion La opción a aplicar.
-     * @returns {boolean} True si la operación fue exitosa.
-     */
-    function aplicarConfiguracion(opcion) {
-      // ...
-      return true;
-    }
-    ```
+  ```javascript
+  // src/app.js
+  /**
+   * Aplica una configuración específica.
+   * @param {OpcionConfiguracion} opcion La opción a aplicar.
+   * @returns {boolean} True si la operación fue exitosa.
+   */
+  function aplicarConfiguracion(opcion) {
+    // ...
+    return true
+  }
+  ```
 
 ## Calidad de Código
 

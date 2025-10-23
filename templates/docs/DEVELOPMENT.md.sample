@@ -38,7 +38,7 @@ Un ejemplo de como se vería un archivo de test sería lo siguiente:
 
 ```javascript
 // test/app.test.js
-import {jest, describe, it, expect, beforeEach, beforeAll} from '@jest/globals'
+import { jest, describe, it, expect, beforeEach, beforeAll } from '@jest/globals'
 import fs from 'fs'
 import path from 'path'
 import vm from 'vm'
@@ -56,7 +56,9 @@ describe('app.js::doGet', () => {
    */
   const context = {
     HtmlService: mockHtmlService,
-    doGet: () => { throw new Error('Función doGet no inicializada por el test') },
+    doGet: () => {
+      throw new Error('Función doGet no inicializada por el test')
+    },
   }
 
   beforeAll(() => {
@@ -66,7 +68,9 @@ describe('app.js::doGet', () => {
     vm.runInContext(scriptContent, context)
   })
 
-  beforeEach(() => { jest.clearAllMocks() })
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
 
   it('must call createHtmlOutputFromFile with "index"', () => {
     context.doGet()

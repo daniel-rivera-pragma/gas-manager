@@ -14,16 +14,16 @@ Este artefacto, asume la instalacion previa de algunos elementos. Para más deta
 
 1. **Clona el repositorio:**
 
-    ```bash
-    git clone <URL_DEL_REPOSITORIO> %APP_NAME%
-    cd %APP_NAME%
-    ```
+   ```bash
+   git clone <URL_DEL_REPOSITORIO> %APP_NAME%
+   cd %APP_NAME%
+   ```
 
 2. **Instala las dependencias:**
 
-    ```bash
-    npm install
-    ```
+   ```bash
+   npm install
+   ```
 
 ## Desarrollo y Despliegue
 
