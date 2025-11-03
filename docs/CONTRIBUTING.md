@@ -26,6 +26,7 @@ Utilizamos una versión simplificada de Conventional Commits. El formato es `<TI
 
 - **`<TIPO>`**: Un prefijo en mayúsculas que describe la naturaleza del cambio.
   - `ADD`: Para añadir una nueva funcionalidad, archivo o dependencia.
+  - `DEL`: Para eliminar una nueva funcionalidad, archivo o dependencia.
   - `SUPPORT`: Para cambios que modifican funcionalidades, archivos o dependencias existentes.
   - `FIX`: Para corregir un bug.
   - `FORMAT`: Para cambios que actualizan archivos solo para gestionar formato, sin aportar o modificar funcionalidad.
