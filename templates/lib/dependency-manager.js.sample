@@ -1,53 +1,35 @@
 /** @implements {Lib.DependencyManager} */
 class DependencyManager {
   constructor() {
-    /**
-     * @protected
-     * @type {Map<string, any>}
-     */
+    /** @type {Map<string, any>} */
     this._instances = new Map()
-    /**
-     * @protected
-     * @type {Map<string, () => any>}
-     */
+    /** @type {Map<string, () => any>} */
     this._factories = new Map()
   }
 
   /**
-   * @protected
-   * @param {Lib.DependencyManager.ClassDef} classDef
+   * @param {Lib.Types.ClassDef} classDef
    * @returns {string}
    */
   _getKey(classDef) {
     const key = classDef.name
-    if (typeof key !== 'string' || key === '') {
-      throw new Error('Error trying to instance object')
-    }
+    if (typeof key !== 'string' || key === '') throw new Error('Error trying to instance object')
     return key
   }
 
-  /**
-   * @template {Lib.DependencyManager.ClassDef} T
-   * @param {T} classDef
-   * @param {() => InstanceType<T>} factory
-   */
+  /** @type {Lib.DependencyManager.Methods.Register} */
   register(classDef, factory) {
     const key = this._getKey(classDef)
     this._factories.set(key, factory)
   }
 
-  /**
-   * @template {Lib.DependencyManager.ClassDef} T
-   * @param {T} classDef
-   * @returns {InstanceType<T>}
-   */
+  /** @type {Lib.DependencyManager.Methods.Resolve} */
   resolve(classDef) {
     const key = this._getKey(classDef)
     const instance = this._instances.get(key)
     if (instance !== undefined) return instance
     const factory = this._factories.get(key)
-    if (factory === undefined)
-      throw new Error(`No factory found for instance ${key}`)
+    if (factory === undefined) throw new Error(`No factory found for instance ${key}`)
     const newInstance = factory()
     this._instances.set(key, newInstance)
     return newInstance
