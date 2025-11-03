@@ -15,7 +15,8 @@ create_folder "Lib:./src/lib"
 # Copy lib files
 echo "INF~ Copying JS files" >&2
 declare dependency_manager_js="dependency-manager.js:${root_dir}/templates/lib/dependency-manager.js.sample:./src/lib/dependency-manager.js"
-copy_element "${dependency_manager_js}"
+declare cache_manager_js="cache-manager.js:${root_dir}/templates/lib/cache-manager.js.sample:./src/lib/cache-manager.js"
+copy_element "${dependency_manager_js}" "${cache_manager_js}"
 # Copy type files
 [ ! -d ./types ] && echo "ERR~ No types folder found" >&2 && exit 1
 echo "INF~ Copying type definition files" >&2
