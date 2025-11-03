@@ -1,0 +1,741 @@
+/** @implements {Lib.SpreadsheetsManager} */
+class SpreadsheetsManager {
+  /** @param {Lib.SpreadsheetsManager.Deps} deps */
+  constructor({ spreadsheetApp, propsService, lockService, lockTimeout = 10000 }) {
+    this._spreadsheetApp = spreadsheetApp
+    this._propsService = propsService
+    this._lockService = lockService
+    this._lockTimeout = lockTimeout
+    /** @type {Map<string, GoogleAppsScript.Spreadsheet.Spreadsheet>} */
+    this._spreadsheets = new Map()
+    /** @type {Map<string, GoogleAppsScript.Spreadsheet.Sheet>} */
+    this._sheets = new Map()
+  }
+
+  /** @type {Lib.SpreadsheetsManager.Methods.Get} */
+  get({ spreadsheetKey, sheetName, filters }) {
+    const { sheet, headers } = this._getSheetNHeaders(spreadsheetKey, sheetName)
+    if (filters === undefined) return this._get(this._getAllRows(sheet), (row) => row, headers)
+    const { search, indexedMap } = this._parseFilters(filters, headers)
+    if (search === null) return this._get(this._getAllRows(sheet), (row) => row, headers, indexedMap)
+    const searchRanges = this._getRangesInSearch(sheet, search)
+    return this._get(searchRanges, (range) => this._getRow(sheet, range.getRow()), headers, indexedMap)
+  }
+
+  //#region Get
+
+  /**
+   * @template T
+   * @param {T[]} items
+   * @param {(item: T) => Lib.Types.Spreadsheet.Row} generator
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @param {Lib.Types.Spreadsheet.Filter.IndexedMap} [filters]
+   * @returns {Lib.Types.Spreadsheet.Data[]}
+   */
+  _get(items, generator, headers, filters) {
+    /** @type {Lib.Types.Spreadsheet.Data[]} */
+    const dataArray = []
+    for (const item of items) {
+      const row = generator(item)
+      const data = this._rowToData(row, headers, filters)
+      if (data === null && filters === undefined) throw new Error('Unexpected parse error getting data')
+      else if (data !== null) dataArray.push(data)
+    }
+    return dataArray
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {number} rowIndex
+   * @returns {Lib.Types.Spreadsheet.Row}
+   */
+  _getRow(sheet, rowIndex) {
+    const { row } = this._getRangeNRow(sheet, rowIndex)
+    return row
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {number} rowIndex
+   * @returns {{
+   * range: GoogleAppsScript.Spreadsheet.Range
+   * row: Lib.Types.Spreadsheet.Row
+   * }}
+   */
+  _getRangeNRow(sheet, rowIndex) {
+    const range = sheet.getRange(`${rowIndex}:${rowIndex}`)
+    const row = range.getValues()[0]
+    return { range, row }
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @returns {Lib.Types.Spreadsheet.Row[]}
+   */
+  _getAllRows(sheet) {
+    const rows = sheet.getDataRange().getValues()
+    if (rows.length <= 1) return []
+    rows.shift()
+    return rows
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.Search} search
+   * @returns {GoogleAppsScript.Spreadsheet.Range[]}
+   */
+  _getRangesInSearch(sheet, { columnIndex, term }) {
+    const lastRow = sheet.getLastRow()
+    if (lastRow <= 1) return []
+    const rowsCount = lastRow - 1
+    if (rowsCount === 0) return []
+    const searchResult = sheet
+      .getRange(2, columnIndex, rowsCount)
+      .createTextFinder(term)
+      .matchEntireCell(true)
+      .findAll()
+    return searchResult
+  }
+
+  //#endregion
+
+  /** @type {Lib.SpreadsheetsManager.Methods.Save} */
+  save({ spreadsheetKey, sheetName, data, idFields }) {
+    const { sheet, headers } = this._getSheetNHeaders(spreadsheetKey, sheetName)
+    const firstId = idFields.shift()
+    if (firstId === undefined) {
+      this._save(sheet, this._dataToRow(data, headers))
+      return
+    }
+    const firstIdField = this._parseIdField(firstId, data, headers)
+    const searchRanges = this._getRangesInSearch(sheet, {
+      columnIndex: firstIdField.index + 1,
+      term: firstIdField.value,
+    })
+    if (searchRanges.length <= 0) {
+      this._save(sheet, this._dataToRow(data, headers))
+      return
+    }
+    searchRanges.forEach((searchRange) => {
+      const { range: targetRange, row: currentRow } = this._getRangeNRow(sheet, searchRange.getRow())
+      if (this._meetsIdFields(currentRow, idFields, data, headers))
+        this._save(sheet, this._dataToRow(data, headers), targetRange)
+    })
+  }
+
+  //#region Save
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.Row} row
+   * @param {number | GoogleAppsScript.Spreadsheet.Range} [ref]
+   */
+  _save(sheet, row, ref) {
+    this._handleWithScriptLock(() => {
+      if (ref === undefined) {
+        sheet.appendRow(row)
+        return
+      }
+      if (typeof ref === 'number' && ref <= 1) throw new Error(`'${ref}' is not a valid row index to save data`)
+      if (typeof ref !== 'number' && ref.getNumRows() > 1) throw new Error('Reference range has more than one row')
+      const targetRange = typeof ref === 'number' ? sheet.getRange(`${ref}:${ref}`) : ref
+      targetRange.setValues([row])
+    })
+  }
+
+  //#endregion
+
+  /** @type {Lib.SpreadsheetsManager.Methods.Insert} */
+  insert({ spreadsheetKey, sheetName, data }) {
+    if (data.length <= 0) return
+    const { sheet, headers } = this._getSheetNHeaders(spreadsheetKey, sheetName)
+    const newRows = data.map((item) => this._dataToRow(item, headers))
+    this._insert(sheet, newRows)
+  }
+
+  //#region Insert
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.Row[]} rows
+   */
+  _insert(sheet, rows) {
+    if (rows.length <= 0) return
+    this._handleWithScriptLock(() => {
+      sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows)
+    })
+  }
+
+  //#endregion
+
+  /** @type {Lib.SpreadsheetsManager.Methods.Update} */
+  update({ spreadsheetKey, sheetName, set, idFields, criteria }) {
+    if (set.length <= 0) throw new Error('Unexepected empty set')
+    const { sheet, headers } = this._getSheetNHeaders(spreadsheetKey, sheetName)
+    if (criteria === undefined) this._updateWithoutCriteria(sheet, headers, set, idFields)
+    else this._updateWithCriteria(sheet, headers, set, idFields, criteria)
+  }
+
+  //#region Update
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @param {Lib.Types.Spreadsheet.Data[]} set
+   * @param {string[]} idFields
+   */
+  _updateWithoutCriteria(sheet, headers, set, idFields) {
+    const firstId = idFields.shift()
+    if (firstId === undefined) throw new Error('Unexpected empty idFiedls')
+    /** @type {GoogleAppsScript.Spreadsheet.Range[]} */
+    const initial = []
+    this._updateSet(sheet, set, idFields, headers, initial, {
+      items: (updateData) => {
+        const firstIdField = this._parseIdField(firstId, updateData, headers)
+        const searchRanges = this._getRangesInSearch(sheet, {
+          columnIndex: firstIdField.index + 1,
+          term: firstIdField.value,
+        })
+        return searchRanges
+      },
+      index: (item) => item.getRow(),
+      flag: (currentRow, updateData) => this._meetsIdFields(currentRow, idFields, updateData, headers),
+    })
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @param {Lib.Types.Spreadsheet.Data[]} set
+   * @param {string[]} idFields
+   * @param {Lib.Types.Spreadsheet.Filter.Dictionary} criteria
+   */
+  _updateWithCriteria(sheet, headers, set, idFields, criteria) {
+    const { search, indexedMap } = this._parseFilters(criteria, headers)
+    if (search === null) this._updateWithoutSearch(sheet, headers, set, idFields, indexedMap)
+    else this._updateWithSearch(sheet, headers, set, idFields, search, indexedMap)
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @param {Lib.Types.Spreadsheet.Data[]} set
+   * @param {string[]} idFields
+   * @param {Lib.Types.Spreadsheet.Search} search
+   * @param {Lib.Types.Spreadsheet.Filter.IndexedMap} filters
+   */
+  _updateWithSearch(sheet, headers, set, idFields, search, filters) {
+    /** @type {GoogleAppsScript.Spreadsheet.Range[]} */
+    const initial = []
+    this._updateSet(sheet, set, idFields, headers, initial, {
+      items: () => this._getRangesInSearch(sheet, search),
+      index: (item) => item.getRow(),
+      flag: (currentRow, updateData) => {
+        const meetsIdFields = this._meetsIdFields(currentRow, idFields, updateData, headers)
+        if (!meetsIdFields) return false
+        const meetsFilters = this._meetsFilters(currentRow, filters)
+        return meetsFilters
+      },
+    })
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @param {Lib.Types.Spreadsheet.Data[]} set
+   * @param {string[]} idFields
+   * @param {Lib.Types.Spreadsheet.Filter.IndexedMap} filters
+   */
+  _updateWithoutSearch(sheet, headers, set, idFields, filters) {
+    /** @type {Lib.Types.Spreadsheet.Row[]} */
+    const initial = []
+    const rows = this._getAllRows(sheet)
+    this._updateSet(sheet, set, idFields, headers, initial, {
+      items: () => rows,
+      normalizer: (index) => index + 2,
+      flag: (currenRow, updateData) => {
+        const meetsIdFields = this._meetsIdFields(currenRow, idFields, updateData, headers)
+        if (!meetsIdFields) return false
+        const meetsFilters = this._meetsFilters(currenRow, filters)
+        return meetsFilters
+      },
+    })
+  }
+
+  /**
+   * @template T
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.Data[]} set
+   * @param {string[]} idFields
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @param {T[]} initialItems
+   * @param {{
+   * items: (updateData: Lib.Types.Spreadsheet.Data) => T[]
+   * index?: (item: T) => number
+   * normalizer?: (index: number) => number
+   * flag: (currentRow: Lib.Types.Spreadsheet.Row, updateData: Lib.Types.Spreadsheet.Data) => boolean
+   * }} generators
+   */
+  _updateSet(sheet, set, idFields, headers, initialItems, { items, index, normalizer, flag }) {
+    for (const updateData of set) {
+      const generatedItems = initialItems.concat(items(updateData))
+      let rowIndex = -1
+      for (let i = 0; i < generatedItems.length; i++) {
+        const item = generatedItems[i]
+        if (index !== undefined) rowIndex = index(item)
+        else if (normalizer !== undefined) rowIndex = normalizer(i)
+        else throw new Error('Unexpected no index no normalizer received')
+        const { range: targetRange, row: currentRow } = this._getRangeNRow(sheet, rowIndex)
+        if (flag(currentRow, updateData)) {
+          const updatedRow = this._updateRow(updateData, idFields, currentRow, headers)
+          this._update(targetRange, updatedRow)
+        }
+      }
+    }
+  }
+
+  /**
+   * @param {Lib.Types.Spreadsheet.Data} updateData
+   * @param {string[]} idFields
+   * @param {Lib.Types.Spreadsheet.Row} currentRow
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @returns {Lib.Types.Spreadsheet.Row}
+   */
+  _updateRow(updateData, idFields, currentRow, headers) {
+    for (const [updateKey, updateValue] of Object.entries(updateData)) {
+      if (idFields.includes(updateKey)) continue
+      const index = headers.get(updateKey)
+      if (index === undefined) continue
+      currentRow[index] = updateValue
+    }
+    return currentRow
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Range} targetRange
+   * @param {Lib.Types.Spreadsheet.Row} row
+   */
+  _update(targetRange, row) {
+    this._handleWithScriptLock(() => {
+      targetRange.setValues([row])
+    })
+  }
+
+  //#endregion
+
+  /** @type {Lib.SpreadsheetsManager.Methods.Replace} */
+  replace({ spreadsheetKey, sheetName, data, criteria = {} }) {
+    if (data.length <= 0) return
+    const { sheet, headers } = this._getSheetNHeaders(spreadsheetKey, sheetName)
+    const newRows = data.map((item) => this._dataToRow(item, headers))
+    if (Object.keys(criteria).length <= 0) this._deleteAll(sheet)
+    else {
+      const { search, indexedMap } = this._parseFilters(criteria, headers)
+      if (search === null) this._deleteWithoutSearch(sheet, indexedMap)
+      else this._deleteWithSearch(sheet, search, indexedMap)
+    }
+    this._insert(sheet, newRows)
+  }
+
+  /** @type {Lib.SpreadsheetsManager.Methods.Delete} */
+  delete({ spreadsheetKey, sheetName, criteria = {} }) {
+    const { sheet, headers } = this._getSheetNHeaders(spreadsheetKey, sheetName)
+    if (Object.keys(criteria).length <= 0) {
+      this._deleteAll(sheet)
+      return
+    }
+    const { search, indexedMap } = this._parseFilters(criteria, headers)
+    if (search === null) this._deleteWithoutSearch(sheet, indexedMap)
+    else this._deleteWithSearch(sheet, search, indexedMap)
+  }
+
+  //#region Delete
+
+  /** @param {GoogleAppsScript.Spreadsheet.Sheet} sheet */
+  _deleteAll(sheet) {
+    if (!this._sheetHasRows(sheet)) return
+    this._handleWithScriptLock(() => {
+      sheet.deleteRows(2, sheet.getLastRow() - 1)
+    })
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.Search} search
+   * @param {Lib.Types.Spreadsheet.Filter.IndexedMap} filters
+   */
+  _deleteWithSearch(sheet, search, filters) {
+    if (!this._sheetHasRows(sheet)) return
+    const searchRanges = this._getRangesInSearch(sheet, search)
+    if (searchRanges.length <= 0) return
+    this._delete(sheet, searchRanges, filters, { generator: (item) => item.getRow() })
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {Lib.Types.Spreadsheet.Filter.IndexedMap} filters
+   */
+  _deleteWithoutSearch(sheet, filters) {
+    if (!this._sheetHasRows) return
+    const rows = this._getAllRows(sheet)
+    this._delete(sheet, rows, filters, { normalizer: (index) => index + 2 })
+  }
+
+  /**
+   * @template T
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @param {T[]} data
+   * @param {Lib.Types.Spreadsheet.Filter.IndexedMap} filters
+   * @param {{
+   * generator?: (item: T) => number
+   * normalizer?: (index: number) => number
+   * }} [functions]
+   */
+  _delete(sheet, data, filters, functions = {}) {
+    const { generator, normalizer } = functions
+    const rows = { index: 0, current: 0, previous: 0, offset: 0, count: 0 }
+    this._handleWithScriptLock(() => {
+      for (let i = 0; i < data.length; i++) {
+        if (generator !== undefined) rows.current = generator(data[i])
+        else if (normalizer !== undefined) rows.current = normalizer(i)
+        else throw new Error('No generator or normalizer function defined')
+        rows.current -= rows.offset
+        if (!this._meetsFilters(this._getRow(sheet, rows.current), filters)) continue
+        if (rows.index === 0) {
+          rows.index = rows.current
+          rows.count = 1
+          rows.previous = rows.current
+        } else if (rows.current - rows.previous === 1) {
+          rows.count += 1
+          rows.previous = rows.current
+        } else {
+          sheet.deleteRows(rows.index, rows.count)
+          rows.offset += rows.count
+          rows.index = rows.current - rows.count
+          rows.count = 1
+          rows.previous = rows.index
+        }
+      }
+      if (rows.index !== 0) sheet.deleteRows(rows.index, rows.count)
+    })
+  }
+
+  //#endregion
+
+  //#region Filtering
+
+  /**
+   * @param {Lib.Types.Spreadsheet.Row} row
+   * @param {Lib.Types.Spreadsheet.Filter.IndexedMap} filters
+   * @returns {boolean}
+   */
+  _meetsFilters(row, filters) {
+    for (const [index, filter] of filters.entries()) {
+      const value = row[index]
+      if (value === undefined) throw new Error(`No value found at index ${index} for provided row`)
+      if (!this._meetsFilter(value, filter)) return false
+    }
+    return true
+  }
+
+  /**
+   * @param {*} value
+   * @param {Lib.Types.Spreadsheet.Filter} filter
+   * @returns {boolean}
+   */
+  _meetsFilter(value, filter) {
+    if (typeof filter === 'string') return this._meetsStringFilter(String(value), filter, '=')
+    if (typeof filter === 'number') return this._meetsNumberFilter(Number(value), filter, '=')
+    if (typeof filter === 'boolean') return this._meetsBooleanFilter(Boolean(value), filter, '=')
+    if (typeof filter.value === 'string')
+      return this._meetsStringFilter(String(value), filter.value, filter.operator ?? '=')
+    if (typeof filter.value === 'number')
+      return this._meetsNumberFilter(Number(value), filter.value, filter.operator ?? '=')
+    if (typeof filter.value === 'boolean')
+      return this._meetsBooleanFilter(Boolean(value), filter.value, filter.operator ?? '=')
+    throw new Error('No valid filter type')
+  }
+
+  /**
+   * @param {string} dataValue
+   * @param {string} filterValue
+   * @param {Lib.Types.Spreadsheet.Filter.Operator.ForString} operator
+   * @returns {boolean}
+   */
+  _meetsStringFilter(dataValue, filterValue, operator) {
+    return this._meetsEquityFilter(dataValue, filterValue, operator)
+  }
+
+  /**
+   * @param {number} dataValue
+   * @param {number} filterValue
+   * @param {Lib.Types.Spreadsheet.Filter.Operator.ForNumber} operator
+   * @returns {boolean}
+   */
+  _meetsNumberFilter(dataValue, filterValue, operator) {
+    if (operator === '=' || operator === '!=') return this._meetsEquityFilter(dataValue, filterValue, operator)
+    if (operator === '<') return dataValue < filterValue
+    if (operator === '<=') return dataValue <= filterValue
+    if (operator === '>') return dataValue > filterValue
+    if (operator === '>=') return dataValue >= filterValue
+    throw new Error(`'${operator}' is not a valid number operator`)
+  }
+
+  /**
+   * @param {boolean} dataValue
+   * @param {boolean} filterValue
+   * @param {Lib.Types.Spreadsheet.Filter.Operator.ForBoolean} operator
+   * @returns {boolean}
+   */
+  _meetsBooleanFilter(dataValue, filterValue, operator) {
+    return this._meetsEquityFilter(dataValue, filterValue, operator)
+  }
+
+  /**
+   * @param {*} dataValue
+   * @param {*} filterValue
+   * @param {Lib.Types.Spreadsheet.Filter.Operator.ForEquity} operator
+   * @returns {boolean}
+   */
+  _meetsEquityFilter(dataValue, filterValue, operator) {
+    if (operator === '=') return dataValue === filterValue
+    else if (operator === '!=') return dataValue !== filterValue
+    throw new Error(`'${operator}' is not a valid equity operator`)
+  }
+
+  /**
+   * @param {Lib.Types.Spreadsheet.Filter.Dictionary} filters
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @returns {{
+   * search: Lib.Types.Spreadsheet.Search | null
+   * indexedMap: Lib.Types.Spreadsheet.Filter.IndexedMap
+   * }}
+   */
+  _parseFilters(filters, headers) {
+    /** @type {Lib.Types.Spreadsheet.Search | null} */
+    let search = null
+    /** @type {Lib.Types.Spreadsheet.Filter.IndexedMap} */
+    const indexedMap = new Map()
+    for (const [key, filter] of Object.entries(filters)) {
+      if (!this._isValidFilterType(filter)) throw new Error(`No valid filter type at field ${key}`)
+      const index = headers.get(key)
+      if (index === undefined) throw new Error(`Field ${key} not found, invalid filter`)
+      if (search === null) {
+        if (typeof filter === 'string') search = { columnIndex: index + 1, term: filter }
+        else if (typeof filter === 'object' && typeof filter.value === 'string' && filter.operator === '=')
+          search = { columnIndex: index, term: filter.value }
+        else indexedMap.set(index, filter)
+      } else indexedMap.set(index, filter)
+    }
+    return { search, indexedMap }
+  }
+
+  /**
+   * @param {Lib.Types.Spreadsheet.Filter} filter
+   * @returns {boolean}
+   */
+  _isValidFilterType(filter) {
+    return (
+      typeof filter === 'string' ||
+      (typeof filter === 'object' && typeof filter.value === 'string') ||
+      typeof filter === 'number' ||
+      (typeof filter === 'object' && typeof filter.value === 'number') ||
+      typeof filter === 'boolean' ||
+      (typeof filter === 'object' && typeof filter.value === 'boolean')
+    )
+  }
+
+  //#endregion
+
+  //#region IdFields
+
+  /**
+   * @param {Lib.Types.Spreadsheet.Row} row
+   * @param {string[]} idFields
+   * @param {Lib.Types.Spreadsheet.Data} data
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @returns {boolean}
+   */
+  _meetsIdFields(row, idFields, data, headers) {
+    for (const field of idFields) {
+      const idField = this._parseIdField(field, data, headers)
+      if (String(row[idField.index]) !== idField.value) return false
+    }
+    return true
+  }
+
+  /**
+   * @param {string} idField
+   * @param {Lib.Types.Spreadsheet.Data} data
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @returns {Lib.Types.Spreadsheet.IdField}
+   */
+  _parseIdField(idField, data, headers) {
+    const index = headers.get(idField)
+    if (index === undefined) throw new Error(`${idField} is not a valid field`)
+    const value = data[idField]
+    if (value === undefined) throw new Error(`Unexpected undefined value for key ${idField} in data`)
+    return { key: idField, index, value: String(value) }
+  }
+
+  //#endregion
+
+  //#region Lock
+
+  /**
+   * @template T
+   * @param {() => T} callback
+   * @returns {T}
+   */
+  _handleWithScriptLock(callback) {
+    const lock = this._lockService.getScriptLock()
+    lock.waitLock(this._lockTimeout)
+    try {
+      return callback()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unexpected lock error'
+      throw new Error(message)
+    } finally {
+      lock.releaseLock()
+    }
+  }
+
+  //#endregion
+
+  //#region Spreadsheet & Sheet management
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @returns {boolean}
+   */
+  _sheetHasRows(sheet) {
+    const lastRow = sheet.getLastRow()
+    if (lastRow <= 1) return false
+    const numRows = lastRow - 1
+    if (numRows <= 0) return false
+    return true
+  }
+
+  /**
+   * @param {string} spreadsheetKey
+   * @param {string} sheetName
+   * @returns {{
+   * sheet: GoogleAppsScript.Spreadsheet.Sheet
+   * headers: Lib.Types.Spreadsheet.IndexForKeyMap
+   * }}
+   */
+  _getSheetNHeaders(spreadsheetKey, sheetName) {
+    const sheet = this._getSheet(spreadsheetKey, sheetName)
+    const headers = this._getHeaders(sheet)
+    return { sheet, headers }
+  }
+
+  /**
+   * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+   * @returns {Lib.Types.Spreadsheet.IndexForKeyMap}
+   */
+  _getHeaders(sheet) {
+    const rows = sheet.getRange('1:1').getValues()
+    if (rows.length <= 0) throw new Error('No headers row found')
+    /** @type {Lib.Types.Spreadsheet.IndexForKeyMap} */
+    const headers = rows[0].reduce(
+      /** @type {(map: Lib.Types.Spreadsheet.IndexForKeyMap, header: any, index: number) => Lib.Types.Spreadsheet.IndexForKeyMap}} */
+      (map, header, index) => {
+        if (typeof header !== 'string' || header === '') throw new Error('Some headers empty or not valid strings')
+        map.set(header, index)
+        return map
+      },
+      new Map()
+    )
+    return headers
+  }
+
+  /**
+   * @param {string} spreadsheetKey
+   * @param {string} sheetName
+   * @returns {GoogleAppsScript.Spreadsheet.Sheet}
+   */
+  _getSheet(spreadsheetKey, sheetName) {
+    const key = `${spreadsheetKey}::${sheetName}`
+    const sheet = this._sheets.get(key)
+    if (sheet !== undefined) return sheet
+    const spreadsheet = this._getSpreadsheet(spreadsheetKey)
+    const newSheet = spreadsheet.getSheetByName(sheetName)
+    if (newSheet === null) throw new Error(`No sheet ${sheetName} found at spreadsheet ${spreadsheetKey}`)
+    this._sheets.set(key, newSheet)
+    return newSheet
+  }
+
+  /**
+   * @param {string} spreadsheetKey
+   * @returns {GoogleAppsScript.Spreadsheet.Spreadsheet}
+   */
+  _getSpreadsheet(spreadsheetKey) {
+    const spreadsheet = this._spreadsheets.get(spreadsheetKey)
+    if (spreadsheet !== undefined) return spreadsheet
+    const spreadsheetId = this._getSpreadsheetId(spreadsheetKey)
+    const newSpreadsheet = this._spreadsheetApp.openById(spreadsheetId)
+    this._spreadsheets.set(spreadsheetKey, newSpreadsheet)
+    return newSpreadsheet
+  }
+
+  /**
+   * @param {string} spreadsheetKey
+   * @returns {string}
+   */
+  _getSpreadsheetId(spreadsheetKey) {
+    const id = this._propsService.getScriptProperties().getProperty(spreadsheetKey)
+    if (id === null) throw new Error(`No id found for key ${spreadsheetKey}`)
+    if (id === '') throw new Error(`Id for key ${spreadsheetKey} is empty`)
+    return id
+  }
+
+  //#endregion
+
+  //#region Mapping
+
+  /**
+   * @param {Lib.Types.Spreadsheet.Data} data
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @returns {Lib.Types.Spreadsheet.Row}
+   */
+  _dataToRow(data, headers) {
+    /** @type {boolean[]} */
+    const checker = new Array(headers.size).fill(false)
+    /** @type {Lib.Types.Spreadsheet.Row} */
+    const row = headers.entries().reduce(
+      /** @type {(result: Lib.Types.Spreadsheet.Row, header: [headerKey: string, headerIndex: number]) => Lib.Types.Spreadsheet.Row} */
+      (result, [headerKey, headerIndex]) => {
+        result[headerIndex] = data[headerKey] ?? ''
+        checker[headerIndex] = true
+        return result
+      },
+      []
+    )
+    if (!checker.every((check) => check === true)) throw new Error('Columns missmatch when parsing data to row')
+    return row
+  }
+
+  /**
+   * @param {Lib.Types.Spreadsheet.Row} row
+   * @param {Lib.Types.Spreadsheet.IndexForKeyMap} headers
+   * @param {Lib.Types.Spreadsheet.Filter.IndexedMap} [filters]
+   * @returns {Lib.Types.Spreadsheet.Data | null}
+   */
+  _rowToData(row, headers, filters = new Map()) {
+    /** @type {Lib.Types.Spreadsheet.Data} */
+    const data = {}
+    for (const [key, index] of headers.entries()) {
+      const value = row[index]
+      if (value === undefined) throw new Error(`No value found for header ${key}`)
+      const filter = filters.get(index)
+      if (filter !== undefined && !this._meetsFilter(value, filter)) {
+        return null
+      }
+      data[key] = value
+    }
+    return data
+  }
+
+  //#endregion
+}
