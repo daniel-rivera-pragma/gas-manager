@@ -1,0 +1,71 @@
+/** @implements {Lib.AppClient} */
+class AppClient {
+  /** @param {Lib.AppClient.Deps} deps */
+  constructor({ fetchApp, scriptApp }) {
+    this._fetchApp = fetchApp
+    this._scriptApp = scriptApp
+    this._baseUrl = 'https://script.google.com'
+    /** @type {Lib.Types.AppCall.Response.Status.Dictionary} */
+    this._statuses = {
+      SUCCESS: 'success',
+      ERROR: 'error',
+    }
+  }
+
+  /**
+   * @param {string} url
+   * @param {Lib.Types.Json} payload
+   * @param {boolean} [withAuth]
+   * @returns {Lib.Types.AppCall.Response}
+   */
+  _call(url, payload, withAuth = false) {
+    /** @type {GoogleAppsScript.URL_Fetch.URLFetchRequestOptions} */
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    }
+    if (withAuth) {
+      const token = this._scriptApp.getOAuthToken()
+      if (token === '') throw new Error('Unexpected empty OAuth token')
+      options.headers = {
+        Authorization: `Bearer ${token}`,
+      }
+    }
+    const { SUCCESS, ERROR } = this._statuses
+    const response = this._fetchApp.fetch(url, options)
+    const code = response.getResponseCode()
+    const rawBody = response.getContentText('utf-8')
+    if (code !== 200) return { status: ERROR, reason: rawBody }
+    try {
+      const body = JSON.parse(rawBody)
+      return { status: SUCCESS, body }
+    } catch (error) {
+      const reason = `ParseError${error instanceof Error ? `: ${error.message}` : ''}`
+      return { status: ERROR, reason }
+    }
+  }
+
+  /**
+   * @param {string} id
+   * @param {string} [org]
+   * @returns {string}
+   */
+  _parseUrl(id, org = '') {
+    if (id === '') throw new Error('Unexpected empty id')
+    const requestPath = `${org === '' ? 'macros' : `a/macros/${org}`}/s/${id}/exec`
+    const url = `${this._baseUrl}/${requestPath}`
+    return url
+  }
+
+  /** @type {Lib.AppClient.Methods.Call} */
+  call({ id, payload, org }) {
+    return this._call(this._parseUrl(id, org), payload)
+  }
+
+  /** @type {Lib.AppClient.Methods.CallWithAuth} */
+  callWithAuth({ id, payload, org }) {
+    return this._call(this._parseUrl(id, org), payload, true)
+  }
+}

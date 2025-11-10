@@ -13,7 +13,7 @@ import globals from 'globals'
 const IGNORE_PATHS = ['node_modules/', 'coverage/', '.vscode/', '.gemini/']
 const RESOLVED_IGNORE_PATHS = IGNORE_PATHS.map((ignorePath) => path.resolve(ignorePath.replace(/\/$/, '')))
 const GAS_GLOBALS = ['doGet', 'doPost', 'onOpen']
-const LIB_GLOBALS = ['DependencyManager', 'SpreadsheetsManager', 'CacheManager']
+const LIB_GLOBALS = ['DependencyManager', 'SpreadsheetsManager', 'CacheManager', 'AppClient']
 
 /**
  * @param {string} baseDir

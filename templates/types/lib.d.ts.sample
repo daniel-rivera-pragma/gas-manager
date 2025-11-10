@@ -2,6 +2,26 @@
 declare namespace Lib.Types {
   type ClassDef = new (...args: *[]) => *
   type MethodDef<T> = (...args: *[]) => T
+  //#region Json
+  namespace Json {
+    type Value = string | number | boolean | null | Json | Json[]
+  }
+  type Json = { [k: string]: Json.Value } | Json.Value[]
+  //#endregion
+  //#region AppCall
+  namespace AppCall {
+    namespace Response {
+      type Status = 'success' | 'error'
+      namespace Status {
+        type Dictionary = { [K in Status as Uppercase<K>]: K }
+      }
+      type Success = { status: Status.Dictionary['SUCCESS']; body: Json }
+      type Error = { status: Status.Dictionary['ERROR']; reason: string }
+    }
+    type Response = Response.Success | Response.Error
+  }
+  //#endregion
+  //#region Spreadsheet
   namespace Spreadsheet {
     type Config = { spreadsheetKey: string; sheetName: string }
     type Row = Array<*>
@@ -29,6 +49,7 @@ declare namespace Lib.Types {
     //#endregion
     type Search = { columnIndex: number; term: string }
   }
+  //#endregion
 }
 //#endregion
 //#region Lib.DependencyManager
@@ -128,5 +149,25 @@ declare class CacheManager implements Lib.CacheManager {
   set: Lib.CacheManager.Methods.Set
   flush: Lib.CacheManager.Methods.Flush
   handle: Lib.CacheManager.Methods.Handle
+}
+//#endregion
+//#region Lib.AppClient
+declare namespace Lib {
+  namespace AppClient {
+    type Deps = { fetchApp: GoogleAppsScript.URL_Fetch.UrlFetchApp; scriptApp: GoogleAppsScript.Script.ScriptApp }
+    namespace Methods {
+      type Call = (params: { id: string; payload: Types.Json; org?: string }) => Types.AppCall.Response
+      type CallWithAuth = Call
+    }
+  }
+  interface AppClient {
+    call: AppClient.Methods.Call
+    callWithAuth: AppClient.Methods.CallWithAuth
+  }
+}
+declare class AppClient implements Lib.AppClient {
+  constructor(deps: Lib.AppClient.Deps)
+  call: Lib.AppClient.Methods.Call
+  callWithAuth: Lib.AppClient.Methods.CallWithAuth
 }
 //#endregion
