@@ -39,11 +39,15 @@ Una vez en un proyecto iniciado, se puede añadir mediante un comando un conjunt
 # Ubicarse en el directorio de un proyecto ya iniciado
 cd <directorio-app>
 # Agregar o actualizar clases utilitarias
-gasm add:lib
+gasm include <lib_name_1> <lib_name_2> ...
 ```
 
-> **Nota:** Solo se puede ejecutar el comando `gasm add:lib` en la raíz de un proyecto iniciado (que tenga el archivo `.clasp.json` y las carpetas que se crean al hacer `gasm init`)
+> **Nota:** Solo se puede ejecutar el comando `gasm include` en la raíz de un proyecto iniciado (que tenga el archivo `.clasp.json` y las carpetas que se crean al hacer `gasm init`)
 
-A continuación se listan las clases utilitarias que se incluyen y su proposito:
+A continuación se listan los **lib_name** que se pueden usar, cada uno corresponde a un archivo `lib_name.js` que una vez incluido queda ubicado en `src/lib/` de modo que pueda ser usado en el proyecto de Apps Script.
 
-- `DependencyManager`: Esta clase esta pensada para extenderse en una clase `AppContainer` que sirva para registrar las factorias de las clases mediante el método `register`, de modo que puedan luego instanciarse eficientemente mediante el uso del método `resolve`.
+> **Nota:** Si se intenta incluir más de una vez el mismo archivo, lo que se generaría es una "sobre-escritura" del contenido, así que re-inlcuir una librería es el mecanismo adecuado para actualizarla, en caso que haya cambios en la fuente.
+
+- `dependency-manager`: Habilita el uso de la clase `DependencyManager`, que sirve como un administrador de dependencias con el que gestionar el cableado entre las clases que se usen en el código.
+- `spreadsheets-manager`: Habilita el uso de la clase `SpreadsheetsManager`, que permite envolver la logica de gestión de datos mediante Google Spreadsheets, considerando que cada hoja del archivo puede ser usada como una tabla de datos. Realiza validaciones de integridad en la estructura de los datos y permite un CRUD completo (get, save, insert, update, replace y delete).
+- `cache-manager`: Habilita el uso de la clase `CacheManager`, que sirve como gestor de memoizacion del retorno de cualquier método en cualquier clase y su limpieza. Establece métodos básicos de administracion (set, get y flush) para establecer, recuperar y eliminar métodos del cache. Además una metodo recomendado de orden superior (handle) que envuelve la ejecución de un método interno de una clase para manejarlo a través del cache.
