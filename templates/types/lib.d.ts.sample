@@ -1,4 +1,4 @@
-//#region Lib.Shared.Types
+//#region Lib.Types
 declare namespace Lib.Types {
   type ClassDef = new (...args: *[]) => *
   type MethodDef<T> = (...args: *[]) => T
