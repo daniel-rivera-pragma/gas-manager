@@ -22,14 +22,8 @@ nvm install --latest-npm
 
 ## 2. Herramientas de Línea de Comandos
 
-- **`@google/clasp`**: La herramienta oficial para gestionar proyectos de Google AppsScript. Instálala de forma global vía npm:
-
-    ```bash
-    npm install -g @google/clasp
-    ```
-
 - **Gemini CLI**: Esta herramienta se utiliza para interactuar con el asistente de IA que apoya este proyecto. Instálala de forma global vía npm:
 
-    ```bash
-    npm install -g @google/gemini-cli
-    ```
+  ```bash
+  npm install -g @google/gemini-cli
+  ```
