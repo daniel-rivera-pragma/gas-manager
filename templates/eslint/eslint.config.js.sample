@@ -21,7 +21,7 @@ async function buildConfig() {
   }
   return [
     {
-      ignores: ['node_modules/', 'coverage/', '.vscode/', '.gemini/'],
+      ignores: ['node_modules/', 'coverage/', '.vscode/', '.gemini/', 'docs/'],
     },
     {
       files: ['**/*.js'],
