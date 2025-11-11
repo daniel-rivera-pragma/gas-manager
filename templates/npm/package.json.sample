@@ -1,10 +1,9 @@
 {
-  "name": "%APP_NAME%",
-  "version": "1.0.0",
   "private": true,
   "type": "module",
   "devDependencies": {
     "@eslint/js": "^9.35.0",
+    "@google/clasp": "^3.1.1",
     "@types/google-apps-script": "^2.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.3.1",
@@ -23,11 +22,11 @@
   },
   "scripts": {
     "format": "prettier --write {src,tests}/**/*",
-    "format:check": "prettier --check {src,tests}/**/*",
     "lint": "eslint {src,tests}/**/*.{js,ts}",
-    "lint:fix": "eslint --fix {src,tests}/**/*.{js,ts}",
     "typecheck": "tsc --noEmit --project jsconfig.json",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests",
-    "validate": "npm run format:check && npm run lint && npm run typecheck && npm run test"
+    "validate": "npm run format && npm run lint && npm run typecheck && npm run test",
+    "prepush": "npm run validate",
+    "push": "clasp push --force"
   }
 }
