@@ -25,6 +25,7 @@ Nombra tu rama usando un prefijo que indique su propósito general, seguido de u
 Utilizamos una versión simplificada de Conventional Commits. El formato es `<TIPO>: <Descripción>`.
 
 - **`<TIPO>`**: Un prefijo en mayúsculas que describe la naturaleza del cambio.
+
   - `ADD`: Para añadir una nueva funcionalidad, archivo o dependencia.
   - `DEL`: Para eliminar una nueva funcionalidad, archivo o dependencia.
   - `UPD`: Para cambios que modifican funcionalidades, archivos o dependencias existentes.
