@@ -48,10 +48,10 @@ Sube la versión más reciente del código desde el directorio local (`rootDir`)
 
 ```bash
 # Situarse en la raiz de la app
-clasp push --force
+npm run push
 ```
 
-`clasp` pedirá confirmación antes de sobrescribir los archivos existentes en el script remoto.
+Este comando ejecutará todas las validaciones y luego usará `clasp` para sobrescribir los archivos existentes en el script remoto.
 
 ### Paso 2: Crear una Nueva Versión (`version`)
 
@@ -68,7 +68,7 @@ Crea una "fotografía" inmutable del código actual del proyecto. Para mantener 
 
 ```bash
 # El comando se ejecuta de forma no interactiva proveyendo la descripción directamente.
-clasp version v1.1.0
+npx clasp version v1.1.0
 ```
 
 ### Paso 3: Desplegar la Versión (`deploy`)
@@ -78,7 +78,7 @@ Asigna la versión recién creada a un despliegue existente para publicarla.
 Primero, lista los despliegues para obtener el `deploymentId` del entorno de producción:
 
 ```bash
-clasp deployments
+npx clasp deployments
 ```
 
 Este comando mostrará una tabla con los despliegues, sus IDs y la versión que tienen actualmente.
@@ -87,7 +87,7 @@ Luego, usa el `deploymentId` y el número de la nueva versión para actualizar e
 
 ```bash
 # Reemplaza <deploymentId> y <versionNumber> con los valores correctos
-clasp deploy -i <deploymentId> -V <versionNumber> -d v1.1.0
+npx clasp deploy -i <deploymentId> -V <versionNumber> -d v1.1.0
 ```
 
 Este comando actualiza la URL de la aplicación web o el complemento para que sirva el código de la nueva versión.
