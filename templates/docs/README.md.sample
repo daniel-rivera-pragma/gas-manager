@@ -30,18 +30,6 @@ Este artefacto, asume la instalacion previa de algunos elementos. Para más deta
 - Para una guía detallada de la estructura y forma de desarrollar y mantener las funcionalidades, consulta la [Guía de Desarrollo](./DEVELOPMENT.md).
 - Para una guía detallada del proceso de despligue de la aplicación, consulta la [Guía de Despliegue](./DEPLOYMENT.md).
 
-## Scripts Disponibles
-
-En el `package.json`, encontrarás varios scripts para mantener la calidad y consistencia del código:
-
-- `npm run format`: Formatea todo el código del proyecto usando Prettier.
-- `npm run format:check`: Comprueba si el código está formateado correctamente, sin modificar archivos.
-- `npm run lint`: Analiza el código con ESLint para encontrar posibles errores o inconsistencias.
-- `npm run lint:fix`: Intenta corregir automáticamente los problemas encontrados por ESLint.
-- `npm run typecheck`: Valida los tipos del proyecto usando JSDoc y el compilador de TypeScript en modo de chequeo.
-- `npm run test`: Ejecuta el conjunto de pruebas unitarias con Jest.
-- `npm run validate`: Ejecuta todas las verificaciones de calidad (formato, lint, typecheck y pruebas).
-
 ## Contribuciones
 
 Por favor, lee nuestras [Directrices de Contribución](./CONTRIBUTING.md) para empezar.

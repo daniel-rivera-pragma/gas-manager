@@ -2,6 +2,17 @@
 
 Esta guía te ayudará a entender la estructura del proyecto y a desarrollar nuevas funcionalidades o contribuir a las existentes.
 
+## Scripts Disponibles
+
+En el `package.json`, encontrarás varios scripts para mantener la calidad y consistencia del código:
+
+- `npm run format`: Formatea todo el código del proyecto usando Prettier.
+- `npm run lint`: Analiza el código con ESLint para encontrar posibles errores o inconsistencias.
+- `npm run typecheck`: Valida los tipos del proyecto usando JSDoc y el compilador de TypeScript en modo de chequeo.
+- `npm run test`: Ejecuta el conjunto de pruebas unitarias con Jest.
+- `npm run validate`: Ejecuta todas las verificaciones de calidad (formato, lint, typecheck y pruebas).
+- `npm run push`: Ejecuta las validaciones y luego sube el codigo al script remoto de GAS.
+
 ## Estructura del Proyecto
 
 - `/src`: El código fuente (`.js`, `.html`) de la aplicación.
