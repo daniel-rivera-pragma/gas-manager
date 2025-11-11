@@ -34,9 +34,10 @@ declare docs_arch="ARCHITECTURE.md:${root_dir}/templates/docs/ARCHITECTURE.md.sa
 declare docs_deploy="DEPLOYMENT.md:${root_dir}/templates/docs/DEPLOYMENT.md.sample:${app_root}/docs/DEPLOYMENT.md"
 declare docs_dev="DEVELOPMENT.md:${root_dir}/templates/docs/DEVELOPMENT.md.sample:${app_root}/docs/DEVELOPMENT.md"
 declare docs_contribute="CONTRIBUTING.md:${root_dir}/docs/CONTRIBUTING.md:${app_root}/docs/CONTRIBUTING.md"
+declare docs_requirements="REQUIREMENTS.md:${root_dir}/docs/REQUIREMENTS.md:${app_root}/docs/REQUIREMENTS.md"
 declare docs_license="LICENSE:${root_dir}/docs/LICENSE:${app_root}/docs/LICENSE"
 declare docs_readme="README.md:${root_dir}/templates/docs/README.md.sample:${app_root}/docs/README.md"
-copy_element "${docs_arch}" "${docs_deploy}" "${docs_dev}" "${docs_contribute}" "${docs_license}" "${docs_readme}"
+copy_element "${docs_arch}" "${docs_deploy}" "${docs_dev}" "${docs_contribute}" "${docs_requirements}" "${docs_license}" "${docs_readme}"
 # eslint
 echo "INF~ Copying Eslint files" >&2
 declare eslint_config="eslint.config.js:${root_dir}/templates/eslint/eslint.config.js.sample:${app_root}/eslint.config.js"
@@ -69,6 +70,6 @@ declare types_mods="modules.d.ts:${root_dir}/templates/types/modules.d.ts.sample
 copy_element "${types_mods}"
 # Update placeholders
 echo "INF~ Update files placeholders" >&2
-replace_app_name "${app_root}" "${app_name}" "docs/README.md" "package.json" "package-lock.json"
+replace_app_name "${app_root}" "${app_name}" "docs/README.md"
 # End message
 echo "INF~ App created, type 'cd ${app_name}' to start developing" >&2
