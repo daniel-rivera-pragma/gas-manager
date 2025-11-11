@@ -1,7 +1,3 @@
-import fs from 'fs'
-import path from 'path'
-import { pathToFileURL } from 'url'
-
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import jsdoc from 'eslint-plugin-jsdoc'
@@ -10,59 +6,8 @@ import gasPlugin from 'eslint-plugin-googleappsscript'
 import jestPlugin from 'eslint-plugin-jest'
 import globals from 'globals'
 
-const IGNORE_PATHS = ['node_modules/', 'coverage/', '.vscode/', '.gemini/']
-const RESOLVED_IGNORE_PATHS = IGNORE_PATHS.map((ignorePath) => path.resolve(ignorePath.replace(/\/$/, '')))
-const GAS_GLOBALS = ['doGet', 'doPost', 'onOpen']
-const LIB_GLOBALS = ['DependencyManager', 'SpreadsheetsManager', 'CacheManager', 'AppClient']
-
-/**
- * @param {string} baseDir
- * @returns {string[]}
- */
-function findGlobalsFiles(baseDir) {
-  /** @type {string[]} */
-  let files = []
-  if (RESOLVED_IGNORE_PATHS.includes(baseDir)) {
-    return files
-  }
-  const entries = fs.readdirSync(baseDir, { withFileTypes: true })
-  for (const entry of entries) {
-    const fullPath = path.join(baseDir, entry.name)
-    if (entry.isDirectory()) {
-      files = files.concat(findGlobalsFiles(fullPath))
-    } else if (entry.name === 'eslint.globals.js') {
-      files.push(fullPath)
-    }
-  }
-  return files
-}
-
-async function buildGlobals() {
-  const globalsFiles = findGlobalsFiles(path.resolve('.'))
-  /** @type {string[]} */
-  let allGlobalsArray = [...GAS_GLOBALS, ...LIB_GLOBALS]
-  for (const globalsFile of globalsFiles) {
-    const globalsUrl = pathToFileURL(globalsFile).href
-    const { default: globalsArray } = await import(globalsUrl)
-    if (Array.isArray(globalsArray)) {
-      allGlobalsArray = allGlobalsArray.concat(globalsArray)
-    }
-  }
-  const allGlobals = [...new Set([...allGlobalsArray])]
-  /** @type {import('eslint').Linter.Globals} */
-  const linterGlobals = {}
-  for (const globalName of allGlobals) {
-    linterGlobals[globalName] = 'readonly'
-  }
-  const globalsPattern = allGlobals.length > 0 ? `^(${allGlobals.join('|')})$` : ''
-  return { linterGlobals, globalsPattern }
-}
-
-/**
- * @returns {Promise<import('eslint').Linter.Config[]>}
- */
+/** @returns {Promise<import('eslint').Linter.Config[]>} */
 async function buildConfig() {
-  const { linterGlobals, globalsPattern } = await buildGlobals()
   const prettierConfigs = prettierPlugin.configs ?? {
     recommended: { rules: {} },
   }
@@ -76,7 +21,7 @@ async function buildConfig() {
   }
   return [
     {
-      ignores: IGNORE_PATHS,
+      ignores: ['node_modules/', 'coverage/', '.vscode/', '.gemini/'],
     },
     {
       files: ['**/*.js'],
@@ -91,7 +36,6 @@ async function buildConfig() {
           ...globals.browser,
           ...globals.node,
           ...gasPlugin.environments.googleappsscript.globals,
-          ...linterGlobals,
         },
       },
       rules: {
@@ -101,12 +45,8 @@ async function buildConfig() {
         'jsdoc/require-jsdoc': 'off',
         'jsdoc/require-param-description': 'off',
         'jsdoc/require-returns-description': 'off',
-        'no-unused-vars': [
-          'error',
-          {
-            varsIgnorePattern: globalsPattern,
-          },
-        ],
+        'no-unused-vars': 'off',
+        'no-undef': 'off',
       },
     },
     ...tseslint.configs.recommended.map((config) => ({

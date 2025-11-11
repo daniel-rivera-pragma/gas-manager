@@ -39,9 +39,8 @@ declare docs_readme="README.md:${root_dir}/templates/docs/README.md.sample:${app
 copy_element "${docs_arch}" "${docs_deploy}" "${docs_dev}" "${docs_contribute}" "${docs_license}" "${docs_readme}"
 # eslint
 echo "INF~ Copying Eslint files" >&2
-declare eslint_globals="eslint.globals.js.sample:${root_dir}/templates/eslint/eslint.globals.js.sample:${app_root}/eslint.globals.js.sample"
 declare eslint_config="eslint.config.js:${root_dir}/templates/eslint/eslint.config.js.sample:${app_root}/eslint.config.js"
-copy_element "${eslint_globals}" "${eslint_config}"
+copy_element "${eslint_config}"
 # git
 echo "INF~ Copying Git files" >&2
 declare git_ignore=".gitignore:${root_dir}/templates/git/.gitignore.sample:${app_root}/.gitignore"
