@@ -112,15 +112,15 @@ class SpreadsheetsManager {
       columnIndex: firstIdField.index + 1,
       term: firstIdField.value,
     })
-    if (searchRanges.length <= 0) {
-      this._save(sheet, this._dataToRow(data, headers))
-      return
-    }
+    let mustSaveNew = true
     searchRanges.forEach((searchRange) => {
       const { range: targetRange, row: currentRow } = this._getRangeNRow(sheet, searchRange.getRow())
-      if (this._meetsIdFields(currentRow, idFields, data, headers))
+      if (this._meetsIdFields(currentRow, idFields, data, headers)) {
         this._save(sheet, this._dataToRow(data, headers), targetRange)
+        mustSaveNew = false
+      }
     })
+    if (mustSaveNew) this._save(sheet, this._dataToRow(data, headers))
   }
 
   //#region Save
