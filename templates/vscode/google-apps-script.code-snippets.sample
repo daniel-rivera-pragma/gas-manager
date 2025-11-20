@@ -18,11 +18,10 @@
       " *  setHeight(height: number): void",
       " *  setWidth(width: number): void",
       " * }} GoogleScript.Host",
-      " * @type {{script: {run: App.Functions & GoogleScript.Run, host: GoogleScript.Host}}}",
+      " * @typedef {{script: {run: App.Functions & GoogleScript.Run, host: GoogleScript.Host}}} GoogleScript",
       " */",
-      "const google = window.google",
       "$0",
     ],
-    "description": "Insert JSDoc definition and instantiation of google global variable in HTML <script> tags",
+    "description": "Insert JSDoc definition of google global variable in HTML <script> tags",
   },
 }
