@@ -1,9 +1,6 @@
-/** @implements {Lib.AppClient} */
+/** @implements {Lib.AppClient.Methods} */
 class AppClient {
-  /** @param {Lib.AppClient.Deps} deps */
-  constructor({ fetchApp, scriptApp }) {
-    this._fetchApp = fetchApp
-    this._scriptApp = scriptApp
+  constructor() {
     this._baseUrl = 'https://script.google.com'
     /** @type {Lib.Types.AppCall.Response.Status.Dictionary} */
     this._statuses = {
@@ -27,14 +24,14 @@ class AppClient {
       muteHttpExceptions: true,
     }
     if (withAuth) {
-      const token = this._scriptApp.getOAuthToken()
+      const token = ScriptApp.getOAuthToken()
       if (token === '') throw new Error('Unexpected empty OAuth token')
       options.headers = {
         Authorization: `Bearer ${token}`,
       }
     }
     const { SUCCESS, ERROR } = this._statuses
-    const response = this._fetchApp.fetch(url, options)
+    const response = UrlFetchApp.fetch(url, options)
     const code = response.getResponseCode()
     const rawBody = response.getContentText('utf-8')
     if (code !== 200) return { status: ERROR, reason: rawBody }
@@ -59,12 +56,19 @@ class AppClient {
     return url
   }
 
-  /** @type {Lib.AppClient.Methods.Call} */
+  /** @param {string} key  */
+  getAppId(key) {
+    const id = PropertiesService.getScriptProperties().getProperty(key)
+    if (id === null) throw new Error(`Unexpected not found key ${key}`)
+    return id
+  }
+
+  /** @param {Lib.Types.AppCall.Request} params */
   call({ id, payload, org }) {
     return this._call(this._parseUrl(id, org), payload)
   }
 
-  /** @type {Lib.AppClient.Methods.CallWithAuth} */
+  /** @param {Lib.Types.AppCall.Request} params */
   callWithAuth({ id, payload, org }) {
     return this._call(this._parseUrl(id, org), payload, true)
   }

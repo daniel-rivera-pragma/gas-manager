@@ -10,6 +10,7 @@ declare namespace Lib.Types {
   //#endregion
   //#region AppCall
   namespace AppCall {
+    type Request = { id: string; payload: Types.Json; org?: string }
     namespace Response {
       type Status = 'success' | 'error'
       namespace Status {
@@ -151,23 +152,13 @@ declare class CacheManager implements Lib.CacheManager {
   handle: Lib.CacheManager.Methods.Handle
 }
 //#endregion
-//#region Lib.AppClient
-declare namespace Lib {
-  namespace AppClient {
-    type Deps = { fetchApp: GoogleAppsScript.URL_Fetch.UrlFetchApp; scriptApp: GoogleAppsScript.Script.ScriptApp }
-    namespace Methods {
-      type Call = (params: { id: string; payload: Types.Json; org?: string }) => Types.AppCall.Response
-      type CallWithAuth = Call
-    }
-  }
-  interface AppClient {
-    call: AppClient.Methods.Call
-    callWithAuth: AppClient.Methods.CallWithAuth
+//#region AppClient
+namespace Lib.AppClient {
+  interface Methods {
+    getAppId: (key: string) => string
+    call: (params: Types.AppCall.Request) => Types.AppCall.Response
+    callWithAuth: Methods['call']
   }
 }
-declare class AppClient implements Lib.AppClient {
-  constructor(deps: Lib.AppClient.Deps)
-  call: Lib.AppClient.Methods.Call
-  callWithAuth: Lib.AppClient.Methods.CallWithAuth
-}
+const AppClient: { new (): Lib.AppClient.Methods }
 //#endregion
