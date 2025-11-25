@@ -1,0 +1,134 @@
+//#region utilities
+type KebabToSnake<S extends string> = S extends `${infer P}-${infer R}` ? `${P}_${KebabToSnake<R>}` : S
+//#endregion
+//#region esling-plugin-googleasppscript
+module 'eslint-plugin-googleappsscript' {
+  const plugin: {
+    environments: {
+      googleappsscript: {
+        globals: Record<string, boolean>
+      }
+    }
+  }
+  export default plugin
+}
+//#endregion
+//#region lib
+//#region Types
+namespace Lib.Types {
+  type ClassDef = new (...args: *[]) => *
+  type MethodDef<T> = (...args: *[]) => T
+  //#region Json
+  namespace Json {
+    type Value = string | number | boolean | null | Json | Json[]
+  }
+  type Json = { [k: string]: Json.Value } | Json.Value[]
+  //#endregion
+  //#region Cache
+  namespace Cache {
+    type Element<T> = { scope: ClassDef; method: MethodDef<T>; id?: string }
+  }
+  //#endregion
+  //#region AppCall
+  namespace AppCall {
+    type Request = { id: string; payload: Types.Json; org?: string }
+    namespace Response {
+      type Status = 'success' | 'error'
+      namespace Status {
+        type Dictionary = { [K in Status as Uppercase<K>]: K }
+      }
+      type Success = { status: Status.Dictionary['SUCCESS']; body: Json }
+      type Error = { status: Status.Dictionary['ERROR']; reason: string }
+    }
+    type Response = Response.Success | Response.Error
+  }
+  //#endregion
+  //#region Spreadsheet
+  namespace Spreadsheet {
+    type Config = { key: string; sheetName: string }
+    type Row = Array<*>
+    type Data = Record<string, *>
+    type IndexForKeyMap = Map<string, number>
+    type IdField = { key: string; index: number; value: string }
+    //#region Filter
+    namespace Filter {
+      namespace Operator {
+        type ForEquity = '=' | '!='
+        type ForComparison = '>' | '>=' | '<' | '<='
+        type ForString = ForEquity
+        type ForNumber = ForEquity | ForComparison
+        type ForBoolean = ForEquity
+      }
+      type ForString = string | { value: string; operator?: Operator.ForString }
+      type ForNumber = number | { value: number; operator?: Operator.ForNumber }
+      type ForBoolean = boolean | { value: boolean; operator?: Operator.ForBoolean }
+    }
+    type Filter = Filter.ForString | Filter.ForNumber | Filter.ForBoolean
+    namespace Filter {
+      type Dictionary = Record<string, Filter>
+      type IndexedMap = Map<number, Filter>
+    }
+    //#endregion
+    type Search = { columnIndex: number; term: string }
+  }
+  //#endregion
+}
+//#endregion
+//#region DependencyManager
+namespace Lib.DependencyManager {
+  interface Methods {
+    register: <T extends Types.ClassDef>(classDef: T, factory: () => InstanceType<T>) => void
+    resolve: <T extends Types.ClassDef>(classDef: T) => InstanceType<T>
+  }
+}
+const DependencyManager: { new (): Lib.DependencyManager.Methods }
+//#endregion
+//#region SpreadsheetsManager
+namespace Lib.SpreadsheetsManager {
+  type Deps = { lockTimeout?: number }
+  interface Methods {
+    get: (
+      params: Types.Spreadsheet.Config & { filters?: Types.Spreadsheet.Filter.Dictionary }
+    ) => Types.Spreadsheet.Data[]
+    save: (params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data; idFields: string[] }) => void
+    insert: (params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data[] }) => void
+    update: (
+      params: Types.Spreadsheet.Config & {
+        set: Types.Spreadsheet.Data[]
+        idFields: string[]
+        criteria?: Types.Spreadsheet.Filter.Dictionary
+      }
+    ) => void
+    replace: (
+      params: Types.Spreadsheet.Config & {
+        data: Types.Spreadsheet.Data[]
+        criteria?: Types.Spreadsheet.Filter.Dictionary
+      }
+    ) => void
+    delete: (params: Types.Spreadsheet.Config & { criteria?: Types.Spreadsheet.Filter.Dictionary }) => void
+  }
+}
+const SpreadsheetsManager: { new (deps: Lib.SpreadsheetsManager.Deps): Lib.SpreadsheetsManager.Methods }
+//#endregion
+//#region CacheManager
+namespace Lib.CacheManager {
+  interface Methods {
+    set: <T>(params: Types.Cache.Element<T> & { value: T }) => void
+    get: <T>(params: Types.Cache.Element<T>) => T | undefined
+    flush: (params: { scope: Types.ClassDef }) => void
+    handle: <T>(params: Types.Cache.Element<T> & { handler: () => T }) => T
+  }
+}
+const CacheManager: { new (): Lib.CacheManager.Methods }
+//#endregion
+//#region AppClient
+namespace Lib.AppClient {
+  interface Methods {
+    getAppId: (key: string) => string
+    call: (params: Types.AppCall.Request) => Types.AppCall.Response
+    callWithAuth: Methods['call']
+  }
+}
+const AppClient: { new (): Lib.AppClient.Methods }
+//#endregion
+//#endregion

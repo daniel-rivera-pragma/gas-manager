@@ -22,10 +22,5 @@ fi
 echo "INF~ Copying JS files" >&2
 declare lib_map=(${libraries})
 copy_element "${lib_map[@]}"
-# Copy type files
-[ ! -d ./types ] && echo "ERR~ No types folder found" >&2 && exit 1
-echo "INF~ Copying type definition files" >&2
-declare types_lib="lib.d.ts:${root_dir}/templates/types/lib.d.ts.sample:./types/lib.d.ts"
-copy_element "${types_lib}"
 # End message
 echo "INF~ Lib added correctly to project" >&2

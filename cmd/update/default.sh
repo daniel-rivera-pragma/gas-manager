@@ -60,7 +60,7 @@ declare tsc_config="jsconfig.json:${root_dir}/templates/tsc/jsconfig.json.sample
 copy_element "${tsc_config}"
 # types
 echo "INF~ Copying Types files" >&2
-declare types_mods="modules.d.ts:${root_dir}/templates/types/modules.d.ts.sample:${app_root}/types/modules.d.ts"
-copy_element "${types_mods}"
+declare types_gasm="gasm.d.ts:${root_dir}/templates/types/gasm.d.ts.sample:${app_root}/types/gasm.d.ts"
+copy_element "${types_gasm}"
 # End message
 echo "INF~ App files updated" >&2
