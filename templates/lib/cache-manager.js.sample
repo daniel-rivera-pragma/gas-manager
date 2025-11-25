@@ -1,11 +1,14 @@
-/** @implements {Lib.CacheManager} */
+/** @implements {Lib.CacheManager.Methods} */
 class CacheManager {
   constructor() {
     /** @type {Map<string, Map<string, *>>} */
     this._cache = new Map()
   }
 
-  /** @type {Lib.CacheManager.Methods.Set} */
+  /**
+   * @template T
+   * @param {Lib.Types.Cache.Element<T> & {value: T}} params
+   */
   set({ scope, method, id, value }) {
     const scopeKey = this._getScopeKey(scope)
     let cachedScope = this._cache.get(scopeKey)
@@ -15,7 +18,11 @@ class CacheManager {
     this._cache.set(scopeKey, cachedScope)
   }
 
-  /** @type {Lib.CacheManager.Methods.Get} */
+  /**
+   * @template T
+   * @param {Lib.Types.Cache.Element<T>} params
+   * @returns {T | undefined}
+   */
   get({ scope, method, id }) {
     const scopeKey = this._getScopeKey(scope)
     const cachedScope = this._cache.get(scopeKey)
@@ -25,13 +32,16 @@ class CacheManager {
     return cachedMethod
   }
 
-  /** @type {Lib.CacheManager.Methods.Flush} */
+  /** @param {{scope: Lib.Types.ClassDef}} params */
   flush({ scope }) {
     const scopeKey = this._getScopeKey(scope)
     this._cache.delete(scopeKey)
   }
 
-  /** @type {Lib.CacheManager.Methods.Handle} */
+  /**
+   * @template T
+   * @param {Lib.Types.Cache.Element<T> & {handler: () => T}} params
+   */
   handle({ scope, method, id, handler }) {
     const cached = this.get({ scope, method, id })
     if (cached !== undefined) return cached

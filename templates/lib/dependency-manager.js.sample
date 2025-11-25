@@ -1,4 +1,4 @@
-/** @implements {Lib.DependencyManager} */
+/** @implements {Lib.DependencyManager.Methods} */
 class DependencyManager {
   constructor() {
     /** @type {Map<string, any>} */
@@ -17,13 +17,21 @@ class DependencyManager {
     return key
   }
 
-  /** @type {Lib.DependencyManager.Methods.Register} */
+  /**
+   * @template {Lib.Types.ClassDef} T
+   * @param {T} classDef
+   * @param {() => InstanceType<T>} factory
+   */
   register(classDef, factory) {
     const key = this._getKey(classDef)
     this._factories.set(key, factory)
   }
 
-  /** @type {Lib.DependencyManager.Methods.Resolve} */
+  /**
+   * @template {Lib.Types.ClassDef} T
+   * @param {T} classDef
+   * @returns {InstanceType<T>}
+   */
   resolve(classDef) {
     const key = this._getKey(classDef)
     const instance = this._instances.get(key)
