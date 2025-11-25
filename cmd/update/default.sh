@@ -62,5 +62,8 @@ copy_element "${tsc_config}"
 echo "INF~ Copying Types files" >&2
 declare types_gasm="gasm.d.ts:${root_dir}/templates/types/gasm.d.ts.sample:${app_root}/types/gasm.d.ts"
 copy_element "${types_gasm}"
+# update dependencies
+echo "INF~ Install npm dependencies" >&2
+npm install
 # End message
 echo "INF~ App files updated" >&2

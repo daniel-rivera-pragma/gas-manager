@@ -71,5 +71,8 @@ copy_element "${types_gasm}"
 # Update placeholders
 echo "INF~ Update files placeholders" >&2
 replace_app_name "${app_root}" "${app_name}" "docs/README.md"
+# Install dependencies
+echo "INF~ Install npm dependencies" >&2
+cd "${app_root}" && npm install
 # End message
 echo "INF~ App created, type 'cd ${app_name}' to start developing" >&2
