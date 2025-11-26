@@ -1,4 +1,7 @@
+.gemini
 node_modules
 coverage
-.gemini
 debug.js
+tmp
+.clasp.json
+.gasm_env
