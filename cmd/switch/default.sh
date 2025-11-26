@@ -6,7 +6,7 @@ declare root_dir="${1}" && shift
 # get-variables
 declare env_name="${1}"
 [ -z "${env_name}" ] && echo "ERR~ Unexpected empty env_name" >&2 && exit 1
-echo "INF~ env:switch command started" >&2
+echo "INF~ switch command started" >&2
 echo -e "     - Env name: ${env_name}" >&2
 # change-env
 [ ! -f "./.gasm/clasp-${env_name}.json" ] && echo "ERR~ env with name ${env_name} not found" >&2 && exit 1

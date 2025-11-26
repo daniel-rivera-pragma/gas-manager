@@ -11,7 +11,7 @@ declare env_name="${1}"
 [ -z "$(echo "${env_name}" | grep -E "^[[:alpha:][:digit:][:space:]-]+$")" ] && echo "ERR~ App name can only contain letters, numbers and spaces" >&2 && exit 1
 env_name=$(echo "${env_name}" | tr "[:upper:]" "[:lower:]" | sed -E -e "s/^[[:space:]-]*//" -e "s/[[:space:]-]*$//" -e "s/[[:space:]-]+/-/g")
 declare env_id="${2}"
-echo "INF~ env:add command started" >&2
+echo "INF~ add command started" >&2
 echo -e "     - Env name: ${env_name}" >&2
 echo -e "     - Env id: ${env_id}" >&2
 # check-if-first-env
