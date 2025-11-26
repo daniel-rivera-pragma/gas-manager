@@ -4,4 +4,3 @@ coverage
 debug.js
 tmp
 .clasp.json
-.gasm_env

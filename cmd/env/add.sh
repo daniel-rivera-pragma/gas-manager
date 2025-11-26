@@ -29,8 +29,6 @@ if [ -d ./tmp ]; then
   [ -d ./src ] && rm -rf ./src
   mv ./tmp ./src
 fi
-# mark-active-env
-echo "${env_name}" >./.gasm_env
 # end-command
 echo "INF~ Env '${env_name}' was added" >&2
 exit 0
