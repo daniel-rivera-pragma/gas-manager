@@ -63,6 +63,10 @@ A continuación se listan los **lib_name** que se pueden usar, cada uno correspo
 
    Habilita el uso de la clase `AppClient`, que sirve para enviar solicitudes POST a otras Apps de Google Apps Script implementadas como WebApp, simplemente especificando el id de la implementación y además, gestionando el envío de OAuth token cuando así se requiera. Necesita los scopes `https://www.googleapis.com/auth/script.external_request` y `https://www.googleapis.com/auth/drive` para funcionar correctamente.
 
+- `document-editor`
+
+   Hablitita el uso de la clase `DocumentEditor`, que sirve como interfaz fluida para manipular un documento de Google Docs a traves del `DocumentApp` de Google Apps Script. Necesita el scope `https://www.googleapis.com/auth/documents` para funcionar correctamente
+
 ## Gestionando diferentes ambientes
 
 Lo mencionado en la sección "Creando una Nueva Aplicación" representa la forma más elemental de trabajar con GAS, sin embargo, GASM proporciona herramientas para manejar diferentes apps de GAS conectadas a un mismo repositorio de código. Esto le logra mediante los comandos descritos a continuación:

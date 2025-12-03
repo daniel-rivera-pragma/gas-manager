@@ -72,6 +72,31 @@ namespace Lib.Types {
     type Search = { columnIndex: number; term: string }
   }
   //#endregion
+  //#region Document
+  namespace Document {
+    type Pointer = GoogleAppsScript.Document.ContainerElement
+    type Style = GoogleAppsScript.Document.ParagraphHeading
+    type Glyph = GoogleAppsScript.Document.GlyphType
+    namespace ParagraphItem {
+      type Format = 'normal' | 'bold' | 'italic' | 'bold-italic'
+      type Formats = { [K in Format as KebabToSnake<Uppercase<K>>]: K }
+    }
+    type ParagraphItem = { content: string; format?: ParagraphItem.Format }
+    namespace ContentItem {
+      type Shapes = {
+        PARAGRAPH: 'paragraph'
+        LIST_ITEM: 'list-item'
+        FORMATTED_PARAGRAPH: 'formatted-paragraph'
+      }
+      type Shape = Shapes[keyof Shapes]
+    }
+    type ContentItem =
+      | { shape: ContentItem.Shapes['PARAGRAPH']; content: string; style: Style }
+      | { shape: ContentItem.Shapes['LIST_ITEM']; content: string; glyph: Glyph }
+      | { shape: ContentItem.Shapes['FORMATTED_PARAGRAPH']; paragraphItems: ParagraphItem[]; style: Style }
+    type ContentBlock = ContentItem[]
+  }
+  //#endregion
 }
 //#endregion
 //#region DependencyManager
@@ -130,5 +155,28 @@ namespace Lib.AppClient {
   }
 }
 const AppClient: { new (): Lib.AppClient.Methods }
+//#endregion
+//#region DocumentEditor
+namespace Lib.DocumentEditor {
+  type Deps = { id?: string; key?: string }
+  interface Methods {
+    replaceText(search: string, replace: string): Methods
+    insertContentBlock(search: string, block: Types.Document.ContentBlock): Methods
+    insertParagraph(search: string, content: string, style: Types.Document.Style): Methods
+    insertFormattedParagraph(
+      search: string,
+      paragraphItems: Types.Document.ParagraphItem[],
+      style: Types.Document.Style
+    ): Methods
+    insertListItem(search: string, content: string, glyph: Types.Document.Glyph): Methods
+    removeElement(search: string): Methods
+    save(): void
+  }
+  interface Static {
+    CONTENT_SHAPE: Types.Document.ContentItem.Shapes
+    TEXT_FORMAT: Types.Document.ParagraphItem.Formats
+  }
+}
+const DocumentEditor: { new (deps: Lib.DocumentEditor.Deps): Lib.DocumentEditor.Methods } & Lib.DocumentEditor.Static
 //#endregion
 //#endregion

@@ -1,0 +1,122 @@
+/** @implements {Lib.DocumentEditor.Methods} */
+class DocumentEditor {
+  /** @param {Lib.DocumentEditor.Deps} deps */
+  constructor({ id, key }) {
+    const docId = this._getDocId(id, key)
+    this._document = DocumentApp.openById(docId)
+    this._body = this._document.getBody()
+    /** @type {Map<string, Lib.Types.Document.Pointer>} */
+    this._pointers = new Map()
+  }
+
+  /** @type {Lib.Types.Document.ContentItem.Shapes} */
+  static CONTENT_SHAPE = { PARAGRAPH: 'paragraph', LIST_ITEM: 'list-item', FORMATTED_PARAGRAPH: 'formatted-paragraph' }
+
+  /** @type {Lib.Types.Document.ParagraphItem.Formats} */
+  static TEXT_FORMAT = { NORMAL: 'normal', BOLD: 'bold', ITALIC: 'italic', BOLD_ITALIC: 'bold-italic' }
+
+  /**
+   * @param {string} [id]
+   * @param {string} [key]
+   */
+  _getDocId(id, key) {
+    if (id !== undefined && id !== '') return id
+    if ((id ?? '') === '' && key === undefined) throw new Error('Unexpected empty id')
+    if (key === undefined || key === '') throw new Error('Unexpected empty or not defined key')
+    const docId = PropertiesService.getScriptProperties().getProperty(key)
+    if (docId === null || docId === '') throw new Error(`Unexpected empty or null id at key '${key}'`)
+    return docId
+  }
+
+  /**
+   * @param {string} search
+   * @returns {GoogleAppsScript.Document.ContainerElement}
+   */
+  _getPointer(search) {
+    const pointer = this._pointers.get(search)
+    if (pointer !== undefined) return pointer
+    const element = this._body.findText(search)
+    if (element === null) throw new Error(`Pointer for ${search} not found`)
+    const newPointer = element.getElement().getParent()
+    this._pointers.set(search, newPointer)
+    return newPointer
+  }
+
+  /**
+   * @param {string} search
+   * @param {string} replace
+   */
+  replaceText(search, replace) {
+    this._body.replaceText(search, replace)
+    return this
+  }
+
+  /**
+   * @param {string} search
+   * @param {Lib.Types.Document.ContentBlock} block
+   */
+  insertContentBlock(search, block) {
+    const { PARAGRAPH, LIST_ITEM, FORMATTED_PARAGRAPH } = DocumentEditor.CONTENT_SHAPE
+    block.forEach((item) => {
+      if (item.shape === PARAGRAPH) this.insertParagraph(search, item.content, item.style)
+      else if (item.shape === LIST_ITEM) this.insertListItem(search, item.content, item.glyph)
+      else if (item.shape === FORMATTED_PARAGRAPH)
+        this.insertFormattedParagraph(search, item.paragraphItems, item.style)
+      else throw new Error('Unexpected invalid content block shape')
+    })
+    return this
+  }
+
+  /**
+   * @param {string} search
+   * @param {string} content
+   * @param {Lib.Types.Document.Style} style
+   */
+  insertParagraph(search, content, style) {
+    this._body.insertParagraph(this._body.getChildIndex(this._getPointer(search)), content).setHeading(style)
+    return this
+  }
+
+  /**
+   * @param {string} search
+   * @param {Lib.Types.Document.ParagraphItem[]} paragraphItems
+   * @param {Lib.Types.Document.Style} style
+   */
+  insertFormattedParagraph(search, paragraphItems, style) {
+    const { NORMAL, BOLD, ITALIC, BOLD_ITALIC } = DocumentEditor.TEXT_FORMAT
+    const allowedFormats = Object.values(DocumentEditor.TEXT_FORMAT)
+    const paragraph = this._body
+      .insertParagraph(this._body.getChildIndex(this._getPointer(search)), '')
+      .setHeading(style)
+    paragraphItems.forEach(({ content, format = NORMAL }) => {
+      if (!allowedFormats.includes(format)) throw new Error('Unexpected invalid text format')
+      const itemText = paragraph.appendText(content)
+      const shouldBeBold = format === BOLD || format === BOLD_ITALIC
+      const shouldBeItalic = format === ITALIC || format === BOLD_ITALIC
+      itemText.setBold(shouldBeBold)
+      itemText.setItalic(shouldBeItalic)
+    })
+    return this
+  }
+
+  /**
+   * @param {string} search
+   * @param {string} content
+   * @param {Lib.Types.Document.Glyph} glyph
+   */
+  insertListItem(search, content, glyph) {
+    this._body.insertListItem(this._body.getChildIndex(this._getPointer(search)), content).setGlyphType(glyph)
+    return this
+  }
+
+  /** @param {string} search */
+  removeElement(search) {
+    this._body.removeChild(this._getPointer(search))
+    this._pointers.delete(search)
+    return this
+  }
+
+  save() {
+    this._document.saveAndClose()
+  }
+}
