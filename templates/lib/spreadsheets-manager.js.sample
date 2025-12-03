@@ -658,7 +658,7 @@ class SpreadsheetsManager {
     if (sheet !== undefined) return sheet
     const spreadsheet = this._getSpreadsheet(spreadsheetKey)
     const newSheet = spreadsheet.getSheetByName(sheetName)
-    if (newSheet === null) throw new Error(`No sheet ${sheetName} found at spreadsheet ${spreadsheetKey}`)
+    if (newSheet === null) throw new Error(`No sheet '${sheetName}' found at spreadsheet '${spreadsheet.getName()}'`)
     this._sheets.set(key, newSheet)
     return newSheet
   }
