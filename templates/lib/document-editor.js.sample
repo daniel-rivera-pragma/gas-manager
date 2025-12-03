@@ -9,12 +9,6 @@ class DocumentEditor {
     this._pointers = new Map()
   }
 
-  /** @type {Lib.Types.Document.ContentItem.Shapes} */
-  static CONTENT_SHAPE = { PARAGRAPH: 'paragraph', LIST_ITEM: 'list-item', FORMATTED_PARAGRAPH: 'formatted-paragraph' }
-
-  /** @type {Lib.Types.Document.ParagraphItem.Formats} */
-  static TEXT_FORMAT = { NORMAL: 'normal', BOLD: 'bold', ITALIC: 'italic', BOLD_ITALIC: 'bold-italic' }
-
   /**
    * @param {string} [id]
    * @param {string} [key]
@@ -120,3 +114,13 @@ class DocumentEditor {
     this._document.saveAndClose()
   }
 }
+
+/** @type {Lib.Types.Document.ContentItem.Shapes} */
+DocumentEditor.CONTENT_SHAPE = {
+  PARAGRAPH: 'paragraph',
+  LIST_ITEM: 'list-item',
+  FORMATTED_PARAGRAPH: 'formatted-paragraph',
+}
+
+/** @type {Lib.Types.Document.ParagraphItem.Formats} */
+DocumentEditor.TEXT_FORMAT = { NORMAL: 'normal', BOLD: 'bold', ITALIC: 'italic', BOLD_ITALIC: 'bold-italic' }
