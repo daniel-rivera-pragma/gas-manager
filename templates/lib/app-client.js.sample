@@ -1,12 +1,16 @@
 /** @implements {Lib.AppClient.Methods} */
 class AppClient {
   constructor() {
+    /** @type {Lib.Types.AppCall.BaseUrl} */
     this._baseUrl = 'https://script.google.com'
     /** @type {Lib.Types.AppCall.Response.Status.Dictionary} */
-    this._statuses = {
-      SUCCESS: 'success',
-      ERROR: 'error',
-    }
+    this._statuses = { SUCCESS: 'success', ERROR: 'error' }
+    /** @type {Lib.Types.AppCall.Env.Key} */
+    this._envKey = 'APP_CALL_ENV'
+    /** @type {Lib.Types.AppCall.Env.Dictionary} */
+    this._envNames = { DEV: 'dev', PDN: 'pdn' }
+    /** @type {Map<string, string>} */
+    this._props = new Map()
   }
 
   /**
@@ -45,31 +49,53 @@ class AppClient {
   }
 
   /**
-   * @param {string} id
+   * @param {string} [id]
+   * @param {string} [key]
    * @param {string} [org]
    * @returns {string}
    */
-  _parseUrl(id, org = '') {
-    if (id === '') throw new Error('Unexpected empty id')
-    const requestPath = `${org === '' ? 'macros' : `a/macros/${org}`}/s/${id}/exec`
+  _parseUrl(id, key, org = '') {
+    const appId = this._getAppId(id, key)
+    const envName = this._getAppEnv()
+    const requestPath = `${org === '' ? 'macros' : `a/macros/${org}`}/s/${appId}/${envName === this._envNames.DEV ? 'dev' : 'exec'}`
     const url = `${this._baseUrl}/${requestPath}`
     return url
   }
 
-  /** @param {string} key  */
-  getAppId(key) {
-    const id = PropertiesService.getScriptProperties().getProperty(key)
-    if (id === null) throw new Error(`Unexpected not found key ${key}`)
-    return id
+  _getAppEnv() {
+    const { DEV, PDN } = this._envNames
+    const prop = this._props.get(this._envKey)
+    if (prop === DEV || prop === PDN) return prop
+    let envName = PropertiesService.getScriptProperties().getProperty(this._envKey)
+    if (envName === undefined || envName === '') envName = PDN
+    if (envName !== DEV && envName !== PDN) throw new Error('Unexpected no valid env name')
+    this._props.set(this._envKey, envName)
+    return envName
+  }
+
+  /**
+   * @param {string} [id]
+   * @param {string} [key]
+   */
+  _getAppId(id = '', key = '') {
+    if (id !== '') return id
+    if (key === '') throw new Error('Unexpected id and key empty')
+    const prop = this._props.get(key)
+    if (prop !== undefined) return prop
+    const appId = PropertiesService.getScriptProperties().getProperty(key)
+    if (appId === null) throw new Error(`Unexpected not found key '${key}'`)
+    if (appId === '') throw new Error(`Unexpected empty id retrieved from key '${key}'`)
+    this._props.set(key, appId)
+    return appId
   }
 
   /** @param {Lib.Types.AppCall.Request} params */
-  call({ id, payload, org }) {
-    return this._call(this._parseUrl(id, org), payload)
+  call({ id, key, payload, org }) {
+    return this._call(this._parseUrl(id, key, org), payload)
   }
 
   /** @param {Lib.Types.AppCall.Request} params */
-  callWithAuth({ id, payload, org }) {
-    return this._call(this._parseUrl(id, org), payload, true)
+  callWithAuth({ id, key, payload, org }) {
+    return this._call(this._parseUrl(id, key, org), payload, true)
   }
 }

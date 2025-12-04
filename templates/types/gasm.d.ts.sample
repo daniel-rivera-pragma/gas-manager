@@ -31,7 +31,13 @@ namespace Lib.Types {
   //#endregion
   //#region AppCall
   namespace AppCall {
-    type Request = { id: string; payload: Types.Json; org?: string }
+    type BaseUrl = 'https://script.google.com'
+    type Env = 'dev' | 'pdn'
+    namespace Env {
+      type Key = 'APP_CALL_ENV'
+      type Dictionary = { [K in Env as Uppercase<K>]: K }
+    }
+    type Request = { id?: string; key?: string; payload: Types.Json; org?: string }
     namespace Response {
       type Status = 'success' | 'error'
       namespace Status {
@@ -149,7 +155,6 @@ const CacheManager: { new (): Lib.CacheManager.Methods }
 //#region AppClient
 namespace Lib.AppClient {
   interface Methods {
-    getAppId: (key: string) => string
     call: (params: Types.AppCall.Request) => Types.AppCall.Response
     callWithAuth: Methods['call']
   }
