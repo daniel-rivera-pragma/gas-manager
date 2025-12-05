@@ -14,9 +14,9 @@ declare libraries=$(map_libraries "${root_dir}" "${@}")
 [ -z "${libraries}" ] && echo "ERR~ Unexpected empty libraries map" >&2 && exit 1
 # Scafold lib directories
 [ ! -d ./src ] && echo "ERR~ No src folder found" >&2 && exit 1
-if [ ! -d ./src/lib ]; then
+if [ ! -d ./src/.lib ]; then
   echo "INF~ Scafolding directories" >&2
-  create_folder "Lib:./src/lib"
+  create_folder "Lib:./src/.lib"
 fi
 # Copy lib files
 echo "INF~ Copying JS files" >&2

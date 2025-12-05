@@ -43,7 +43,7 @@ gasm include <lib_name_1> <lib_name_2> ...
 
 > **Nota:** Solo se puede ejecutar el comando `gasm include` en la raíz de un proyecto iniciado (que tenga el archivo `.clasp.json` y las carpetas que se crean al hacer `gasm init`)
 
-A continuación se listan los **lib_name** que se pueden usar, cada uno corresponde a un archivo `lib_name.js` que una vez incluido queda ubicado en `src/lib/` de modo que pueda ser usado en el proyecto de Apps Script.
+A continuación se listan los **lib_name** que se pueden usar, cada uno corresponde a un archivo `lib_name.js` que una vez incluido queda ubicado en `src/.lib/` de modo que pueda ser usado en el proyecto de Apps Script.
 
 > **Nota:** Si se intenta incluir más de una vez el mismo archivo, lo que se generaría es una "sobre-escritura" del contenido, así que re-inlcuir una librería es el mecanismo adecuado para actualizarla, en caso que haya cambios en la fuente.
 
