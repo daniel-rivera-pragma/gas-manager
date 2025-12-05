@@ -117,8 +117,8 @@ namespace Lib.Types {
 //#region DependencyManager
 namespace Lib.DependencyManager {
   interface Methods {
-    register: <T extends Types.ClassDef>(classDef: T, factory: () => InstanceType<T>) => void
-    resolve: <T extends Types.ClassDef>(classDef: T) => InstanceType<T>
+    register<T extends Types.ClassDef>(classDef: T, factory: () => InstanceType<T>): void
+    resolve<T extends Types.ClassDef>(classDef: T): InstanceType<T>
   }
 }
 const DependencyManager: { new (): Lib.DependencyManager.Methods }
@@ -127,25 +127,23 @@ const DependencyManager: { new (): Lib.DependencyManager.Methods }
 namespace Lib.SpreadsheetsManager {
   type Deps = { lockTimeout?: number }
   interface Methods {
-    get: (
-      params: Types.Spreadsheet.Config & { filters?: Types.Spreadsheet.Filter.Dictionary }
-    ) => Types.Spreadsheet.Data[]
-    save: (params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data; idFields: string[] }) => void
-    insert: (params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data[] }) => void
-    update: (
+    get(params: Types.Spreadsheet.Config & { filters?: Types.Spreadsheet.Filter.Dictionary }): Types.Spreadsheet.Data[]
+    save(params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data; idFields: string[] }): void
+    insert(params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data[] }): void
+    update(
       params: Types.Spreadsheet.Config & {
         set: Types.Spreadsheet.Data[]
         idFields: string[]
         criteria?: Types.Spreadsheet.Filter.Dictionary
       }
-    ) => void
-    replace: (
+    ): void
+    replace(
       params: Types.Spreadsheet.Config & {
         data: Types.Spreadsheet.Data[]
         criteria?: Types.Spreadsheet.Filter.Dictionary
       }
-    ) => void
-    delete: (params: Types.Spreadsheet.Config & { criteria?: Types.Spreadsheet.Filter.Dictionary }) => void
+    ): void
+    delete(params: Types.Spreadsheet.Config & { criteria?: Types.Spreadsheet.Filter.Dictionary }): void
   }
 }
 const SpreadsheetsManager: { new (deps: Lib.SpreadsheetsManager.Deps): Lib.SpreadsheetsManager.Methods }
@@ -153,10 +151,10 @@ const SpreadsheetsManager: { new (deps: Lib.SpreadsheetsManager.Deps): Lib.Sprea
 //#region CacheManager
 namespace Lib.CacheManager {
   interface Methods {
-    set: <T>(params: Types.Cache.Element<T> & { value: T }) => void
-    get: <T>(params: Types.Cache.Element<T>) => T | undefined
-    flush: (params: { scope: Types.ClassDef }) => void
-    handle: <T>(params: Types.Cache.Element<T> & { handler: () => T }) => T
+    set<T>(params: Types.Cache.Element<T> & { value: T }): void
+    get<T>(params: Types.Cache.Element<T>): T | undefined
+    flush(params: { scope: Types.ClassDef }): void
+    handle<T>(params: Types.Cache.Element<T> & { handler: () => T }): T
   }
 }
 const CacheManager: { new (): Lib.CacheManager.Methods }
@@ -164,8 +162,8 @@ const CacheManager: { new (): Lib.CacheManager.Methods }
 //#region AppClient
 namespace Lib.AppClient {
   interface Methods {
-    call: (params: Types.AppCall.Request) => Types.AppCall.Response
-    callWithAuth: Methods['call']
+    call(params: Types.AppCall.Request): Types.AppCall.Response
+    callWithAuth(params: Types.AppCall.Request): Types.AppCall.Response
   }
 }
 const AppClient: { new (): Lib.AppClient.Methods }
@@ -196,13 +194,13 @@ const DocumentEditor: { new (deps: Lib.DocumentEditor.Deps): Lib.DocumentEditor.
 //#region UiBridge
 namespace Lib.UiBridge {
   interface Methods {
-    getStyles: (styles: string[]) => string
-    getScripts: (scripts: string[]) => string
-    getComponent: (params: { component: Types.Ui.Component; data?: Record<string, *>; parent?: string }) => string
-    callApi: <T extends keyof Types.Ui.Api>(params: {
+    getStyles(styles: string[]): string
+    getScripts(scripts: string[]): string
+    getComponent(params: { component: Types.Ui.Component; data?: Record<string, *>; parent?: string }): string
+    callApi<T extends keyof Types.Ui.Api>(params: {
       action: T
       input?: Types.Ui.Api[T]['input']
-    }) => Types.Ui.Api[T]['output']
+    }): Types.Ui.Api[T]['output']
   }
   interface Static {
     COMPONENT_SHAPES: Types.Ui.Component.Shapes
