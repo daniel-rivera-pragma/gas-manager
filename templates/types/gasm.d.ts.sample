@@ -108,9 +108,10 @@ namespace Lib.Types {
       type Shapes = { [K in Shape as Uppercase<K>]: K }
     }
     type Component = string | { name: string; shape: Component.Shape }
-    type Api = { [k: string]: { input: unknown; output: unknown } }
     namespace Api {
-      type Factories = { [k in keyof Api]: (input: Api[k]['input']) => Api[k]['output'] }
+      type Factories = { [k: string]: (input?: *) => * }
+      type InputFor<F extends Factories, A extends keyof F> = Parameters<F[A]>[0]
+      type OutputFor<F extends Factories, A extends keyof F> = ReturnType<F[A]>
     }
   }
 }
@@ -184,7 +185,7 @@ namespace Lib.DocumentEditor {
     removeElement(search: string): Methods
     save(): void
   }
-  interface Static {
+  type Static = {
     CONTENT_SHAPE: Types.Document.ContentItem.Shapes
     TEXT_FORMAT: Types.Document.ParagraphItem.Formats
   }
@@ -197,12 +198,13 @@ namespace Lib.UiBridge {
     getStyles(styles: string[]): string
     getScripts(scripts: string[]): string
     getComponent(params: { component: Types.Ui.Component; data?: Record<string, *>; parent?: string }): string
-    callApi<T extends keyof Types.Ui.Api>(params: {
-      action: T
-      input?: Types.Ui.Api[T]['input']
-    }): Types.Ui.Api[T]['output']
+    _callApi<F extends Types.Ui.Api.Factories, A extends keyof F>(params: {
+      factories: F
+      action: A
+      input?: Types.Ui.Api.InputFor<F, A>
+    }): Types.Ui.Api.OutputFor<F, A>
   }
-  interface Static {
+  type Static = {
     COMPONENT_SHAPES: Types.Ui.Component.Shapes
   }
 }

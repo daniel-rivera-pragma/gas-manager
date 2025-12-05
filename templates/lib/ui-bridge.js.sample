@@ -1,10 +1,5 @@
 /** @implements {Lib.UiBridge.Methods} */
 class UiBridge {
-  constructor() {
-    /** @type {Lib.Types.Ui.Api.Factories} */
-    this._factories = {}
-  }
-
   /** @param {string[]} styles */
   getStyles(styles) {
     const { STYLE } = UiBridge.COMPONENT_SHAPES
@@ -56,23 +51,28 @@ class UiBridge {
   }
 
   /**
-   * @template {keyof Lib.Types.Ui.Api} T
-   * @param {{action: T; input?: Lib.Types.Ui.Api[T]['input']}} params
+   * @template {Lib.Types.Ui.Api.Factories} F
+   * @template {keyof F} A
+   * @param {{factories: F; action: A; input?: Lib.Types.Ui.Api.InputFor<F, A>}} params
+   * @returns {Lib.Types.Ui.Api.OutputFor<F, A>}
    */
-  callApi({ action, input }) {
-    if (!this._isValidAction(action)) throw new Error(`Unexpected invalid action '${action}'`)
-    const factory = this._factories[action]
-    const output = factory(input)
+  _callApi({ factories, action, input }) {
+    this._checkIfValidAction(factories, action)
+    const factory = factories[action]
+    const output = input === undefined ? factory() : factory(input)
     return output
   }
 
-  /** @param {unknown} action */
-  _isValidAction(action) {
+  /**
+   * @template {Lib.Types.Ui.Api.Factories} F
+   * @template {keyof F} A
+   * @param {F} factories
+   * @param {A} action
+   */
+  _checkIfValidAction(factories, action) {
     if (typeof action !== 'string') throw new Error('Unexpected no string action')
-    const isValid = Object.keys(this._factories).includes(action)
-    return isValid
+    if (!Object.keys(factories).includes(action)) throw new Error(`Unexpected invalid action '${action}'`)
   }
 }
-
 /** @type {Lib.Types.Ui.Component.Shapes} */
 UiBridge.COMPONENT_SHAPES = { BLOCK: 'block', STYLE: 'style', SCRIPT: 'script' }
