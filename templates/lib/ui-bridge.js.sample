@@ -1,0 +1,78 @@
+/** @implements {Lib.UiBridge.Methods} */
+class UiBridge {
+  constructor() {
+    /** @type {Lib.Types.Ui.Api.Factories} */
+    this._factories = {}
+  }
+
+  /** @param {string[]} styles */
+  getStyles(styles) {
+    const { STYLE } = UiBridge.COMPONENT_SHAPES
+    return styles.reduce((result, style) => {
+      return `${result}${this.getComponent({ component: { name: style, shape: STYLE }, parent: 'styles' })}`
+    }, '')
+  }
+
+  /** @param {string[]} scripts */
+  getScripts(scripts) {
+    const { SCRIPT } = UiBridge.COMPONENT_SHAPES
+    return scripts.reduce((result, script) => {
+      return `${result}${this.getComponent({ component: { name: script, shape: SCRIPT }, parent: 'scripts' })}`
+    }, '')
+  }
+
+  /** @param {{component: Lib.Types.Ui.Component; data?: Record<string, *>; parent?: string}} params */
+  getComponent({ component, data = {}, parent }) {
+    try {
+      const path = this._getComponentPath({ component, parent })
+      const template = HtmlService.createTemplateFromFile(path)
+      for (const [key, value] of Object.entries(data)) {
+        template[key] = value
+      }
+      const html = template.evaluate()
+      return html.getContent()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      return `<script>console.error('${message}')</script>`
+    }
+  }
+
+  /** @param {{component: Lib.Types.Ui.Component; parent?: string}} params */
+  _getComponentPath({ component, parent = '' }) {
+    const location = `ui${parent !== '' ? `/${parent}` : ''}`
+    const path = `${location}/${this._getComponentFilename(component)}`
+    return path
+  }
+
+  /** @param {Lib.Types.Ui.Component} component */
+  _getComponentFilename(component) {
+    const { BLOCK, SCRIPT, STYLE } = UiBridge.COMPONENT_SHAPES
+    if (typeof component === 'string') return `${component}.html`
+    const { name, shape } = component
+    if (shape === BLOCK) return `${name}.html`
+    if (shape === STYLE) return `${name}.css.html`
+    if (shape === SCRIPT) return `${name}.js.html`
+    throw new Error('Unexpected invalid shape')
+  }
+
+  /**
+   * @template {keyof Lib.Types.Ui.Api} T
+   * @param {{action: T; input?: Lib.Types.Ui.Api[T]['input']}} params
+   */
+  callApi({ action, input }) {
+    if (!this._isValidAction(action)) throw new Error(`Unexpected invalid action '${action}'`)
+    const factory = this._factories[action]
+    const output = factory(input)
+    return output
+  }
+
+  /** @param {unknown} action */
+  _isValidAction(action) {
+    if (typeof action !== 'string') throw new Error('Unexpected no string action')
+    const isValid = Object.keys(this._factories).includes(action)
+    return isValid
+  }
+}
+
+/** @type {Lib.Types.Ui.Component.Shapes} */
+UiBridge.COMPONENT_SHAPES = { BLOCK: 'block', STYLE: 'style', SCRIPT: 'script' }

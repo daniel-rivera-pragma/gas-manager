@@ -67,6 +67,10 @@ A continuación se listan los **lib_name** que se pueden usar, cada uno correspo
 
    Hablitita el uso de la clase `DocumentEditor`, que sirve como interfaz fluida para manipular un documento de Google Docs a traves del `DocumentApp` de Google Apps Script. Necesita el scope `https://www.googleapis.com/auth/documents` para funcionar correctamente
 
+- `ui-bridge`
+
+   Habilita el uso de la clase `UiBridge`, que proporciona metodos para gestionar la solicitud de datos desde la capa UI hacia la capa frontend a través de un registro de acciones, incluyendo además la renderización de componentes mediante plantillas con scriptlets del lado del servidor, delegando la carga operacional al back, simplificando la carga en el front y aislando cualquier lógica de negocio. Esta clase está intencionada para ser extendedida en un `UiAdapter`.
+
 ## Gestionando diferentes ambientes
 
 Lo mencionado en la sección "Creando una Nueva Aplicación" representa la forma más elemental de trabajar con GAS, sin embargo, GASM proporciona herramientas para manejar diferentes apps de GAS conectadas a un mismo repositorio de código. Esto le logra mediante los comandos descritos a continuación:
