@@ -67,7 +67,7 @@ class AppClient {
     const prop = this._props.get(this._envKey)
     if (prop === DEV || prop === PDN) return prop
     let envName = PropertiesService.getScriptProperties().getProperty(this._envKey)
-    if (envName === undefined || envName === '') envName = PDN
+    if (envName === null || envName === '') envName = PDN
     if (envName !== DEV && envName !== PDN) throw new Error('Unexpected no valid env name')
     this._props.set(this._envKey, envName)
     return envName
