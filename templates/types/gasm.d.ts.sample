@@ -1,7 +1,5 @@
-//#region utilities
 type KebabToSnake<S extends string> = S extends `${infer P}-${infer R}` ? `${P}_${KebabToSnake<R>}` : S
-//#endregion
-//#region esling-plugin-googleasppscript
+
 module 'eslint-plugin-googleappsscript' {
   const plugin: {
     environments: {
@@ -12,202 +10,198 @@ module 'eslint-plugin-googleappsscript' {
   }
   export default plugin
 }
-//#endregion
-//#region lib
-namespace Lib.Types {
-  type ClassDef = new (...args: *[]) => *
-  type MethodDef<T> = (...args: *[]) => T
-  //#region Json
-  namespace Json {
-    type Value = string | number | boolean | null | Json | Json[]
-  }
-  type Json = { [k: string]: Json.Value } | Json.Value[]
-  //#endregion
-  //#region Cache
-  namespace Cache {
-    type Element<T> = { scope: ClassDef; method: MethodDef<T>; id?: string }
-  }
-  //#endregion
-  //#region AppCall
-  namespace AppCall {
-    type BaseUrl = 'https://script.google.com'
-    type Env = 'dev' | 'pdn'
-    namespace Env {
-      type Key = 'APP_CALL_ENV'
-      type Dictionary = { [K in Env as Uppercase<K>]: K }
+
+namespace Lib {
+  namespace Types {
+    type ClassDef = new (...args: *[]) => *
+    type MethodDef<T> = (...args: *[]) => T
+
+    namespace Json {
+      type Value = string | number | boolean | null | Json | Json[]
     }
-    type Request = { id?: string; key?: string; payload: Types.Json; org?: string }
-    namespace Response {
-      type Status = 'success' | 'error'
-      namespace Status {
-        type Dictionary = { [K in Status as Uppercase<K>]: K }
+    type Json = { [k: string]: Json.Value } | Json.Value[]
+
+    namespace Cache {
+      type Element<T> = { scope: ClassDef; method: MethodDef<T>; id?: string }
+    }
+
+    namespace AppCall {
+      type BaseUrl = 'https://script.google.com'
+      type Env = 'dev' | 'pdn'
+      namespace Env {
+        type Key = 'APP_CALL_ENV'
+        type Dictionary = { [K in Env as Uppercase<K>]: K }
       }
-      type Success = { status: Status.Dictionary['SUCCESS']; body: Json }
-      type Error = { status: Status.Dictionary['ERROR']; reason: string }
-    }
-    type Response = Response.Success | Response.Error
-  }
-  //#endregion
-  //#region Spreadsheet
-  namespace Spreadsheet {
-    type Config = { key: string; sheetName: string }
-    type Row = Array<*>
-    type Data = Record<string, *>
-    type IndexForKeyMap = Map<string, number>
-    type IdField = { key: string; index: number; value: string }
-    //#region Filter
-    namespace Filter {
-      namespace Operator {
-        type ForEquity = '=' | '!='
-        type ForComparison = '>' | '>=' | '<' | '<='
-        type ForString = ForEquity
-        type ForNumber = ForEquity | ForComparison
-        type ForBoolean = ForEquity
+      type Request = { id?: string; key?: string; payload: Types.Json; org?: string }
+      namespace Response {
+        type Status = 'success' | 'error'
+        namespace Status {
+          type Dictionary = { [K in Status as Uppercase<K>]: K }
+        }
+        type Success = { status: Status.Dictionary['SUCCESS']; body: Json }
+        type Error = { status: Status.Dictionary['ERROR']; reason: string }
       }
-      type ForString = string | { value: string; operator?: Operator.ForString }
-      type ForNumber = number | { value: number; operator?: Operator.ForNumber }
-      type ForBoolean = boolean | { value: boolean; operator?: Operator.ForBoolean }
+      type Response = Response.Success | Response.Error
     }
-    type Filter = Filter.ForString | Filter.ForNumber | Filter.ForBoolean
-    namespace Filter {
-      type Dictionary = Record<string, Filter>
-      type IndexedMap = Map<number, Filter>
-    }
-    //#endregion
-    type Search = { columnIndex: number; term: string }
-  }
-  //#endregion
-  //#region Document
-  namespace Document {
-    type Pointer = GoogleAppsScript.Document.ContainerElement
-    type Style = GoogleAppsScript.Document.ParagraphHeading
-    type Glyph = GoogleAppsScript.Document.GlyphType
-    namespace ParagraphItem {
-      type Format = 'normal' | 'bold' | 'italic' | 'bold-italic'
-      type Formats = { [K in Format as KebabToSnake<Uppercase<K>>]: K }
-    }
-    type ParagraphItem = { content: string; format?: ParagraphItem.Format }
-    namespace ContentItem {
-      type Shapes = {
-        PARAGRAPH: 'paragraph'
-        LIST_ITEM: 'list-item'
-        FORMATTED_PARAGRAPH: 'formatted-paragraph'
+
+    namespace Spreadsheet {
+      type Config = { key: string; sheetName: string }
+      type Row = Array<*>
+      type Data = Record<string, *>
+      type IndexForKeyMap = Map<string, number>
+      type IdField = { key: string; index: number; value: string }
+      namespace Filter {
+        namespace Operator {
+          type ForEquity = '=' | '!='
+          type ForComparison = '>' | '>=' | '<' | '<='
+          type ForString = ForEquity
+          type ForNumber = ForEquity | ForComparison
+          type ForBoolean = ForEquity
+        }
+        type ForString = string | { value: string; operator?: Operator.ForString }
+        type ForNumber = number | { value: number; operator?: Operator.ForNumber }
+        type ForBoolean = boolean | { value: boolean; operator?: Operator.ForBoolean }
       }
-      type Shape = Shapes[keyof Shapes]
+      type Filter = Filter.ForString | Filter.ForNumber | Filter.ForBoolean
+      namespace Filter {
+        type Dictionary = Record<string, Filter>
+        type IndexedMap = Map<number, Filter>
+      }
+      type Search = { columnIndex: number; term: string }
     }
-    type ContentItem =
-      | { shape: ContentItem.Shapes['PARAGRAPH']; content: string; style: Style }
-      | { shape: ContentItem.Shapes['LIST_ITEM']; content: string; glyph: Glyph }
-      | { shape: ContentItem.Shapes['FORMATTED_PARAGRAPH']; paragraphItems: ParagraphItem[]; style: Style }
-    type ContentBlock = ContentItem[]
+
+    namespace Document {
+      type Pointer = GoogleAppsScript.Document.ContainerElement
+      type Style = GoogleAppsScript.Document.ParagraphHeading
+      type Glyph = GoogleAppsScript.Document.GlyphType
+      namespace ParagraphItem {
+        type Format = 'normal' | 'bold' | 'italic' | 'bold-italic'
+        type Formats = { [K in Format as KebabToSnake<Uppercase<K>>]: K }
+      }
+      type ParagraphItem = { content: string; format?: ParagraphItem.Format }
+      namespace ContentItem {
+        type Shapes = {
+          PARAGRAPH: 'paragraph'
+          LIST_ITEM: 'list-item'
+          FORMATTED_PARAGRAPH: 'formatted-paragraph'
+        }
+        type Shape = Shapes[keyof Shapes]
+      }
+      type ContentItem =
+        | { shape: ContentItem.Shapes['PARAGRAPH']; content: string; style: Style }
+        | { shape: ContentItem.Shapes['LIST_ITEM']; content: string; glyph: Glyph }
+        | { shape: ContentItem.Shapes['FORMATTED_PARAGRAPH']; paragraphItems: ParagraphItem[]; style: Style }
+      type ContentBlock = ContentItem[]
+    }
+
+    namespace Ui {
+      namespace Component {
+        type Shape = 'block' | 'style' | 'script'
+        type Shapes = { [K in Shape as Uppercase<K>]: K }
+      }
+      type Component = string | { name: string; shape: Component.Shape }
+      namespace Api {
+        type Factories = { [k: string]: (input?: *) => * }
+        type InputFor<F extends Factories, A extends keyof F> = Parameters<F[A]>[0]
+        type OutputFor<F extends Factories, A extends keyof F> = ReturnType<F[A]>
+      }
+    }
   }
-  //#endregion
-  namespace Ui {
-    namespace Component {
-      type Shape = 'block' | 'style' | 'script'
-      type Shapes = { [K in Shape as Uppercase<K>]: K }
+
+  namespace DependencyManager {
+    interface Methods {
+      register<T extends Types.ClassDef>(classDef: T, factory: () => InstanceType<T>): void
+      resolve<T extends Types.ClassDef>(classDef: T): InstanceType<T>
     }
-    type Component = string | { name: string; shape: Component.Shape }
-    namespace Api {
-      type Factories = { [k: string]: (input?: *) => * }
-      type InputFor<F extends Factories, A extends keyof F> = Parameters<F[A]>[0]
-      type OutputFor<F extends Factories, A extends keyof F> = ReturnType<F[A]>
+  }
+
+  namespace SpreadsheetsManager {
+    type Deps = { lockTimeout?: number }
+    interface Methods {
+      get(
+        params: Types.Spreadsheet.Config & { filters?: Types.Spreadsheet.Filter.Dictionary }
+      ): Types.Spreadsheet.Data[]
+      save(params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data; idFields: string[] }): void
+      insert(params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data[] }): void
+      update(
+        params: Types.Spreadsheet.Config & {
+          set: Types.Spreadsheet.Data[]
+          idFields: string[]
+          criteria?: Types.Spreadsheet.Filter.Dictionary
+        }
+      ): void
+      replace(
+        params: Types.Spreadsheet.Config & {
+          data: Types.Spreadsheet.Data[]
+          criteria?: Types.Spreadsheet.Filter.Dictionary
+        }
+      ): void
+      delete(params: Types.Spreadsheet.Config & { criteria?: Types.Spreadsheet.Filter.Dictionary }): void
+    }
+  }
+
+  namespace CacheManager {
+    interface Methods {
+      set<T>(params: Types.Cache.Element<T> & { value: T }): void
+      get<T>(params: Types.Cache.Element<T>): T | undefined
+      flush(params: { scope: Types.ClassDef }): void
+      handle<T>(params: Types.Cache.Element<T> & { handler: () => T }): T
+    }
+  }
+
+  namespace AppClient {
+    interface Methods {
+      call(params: Types.AppCall.Request): Types.AppCall.Response
+      callWithAuth(params: Types.AppCall.Request): Types.AppCall.Response
+    }
+  }
+
+  namespace DocumentEditor {
+    type Deps = { id?: string; key?: string }
+    interface Methods {
+      replaceText(search: string, replace: string): Methods
+      insertContentBlock(search: string, block: Types.Document.ContentBlock): Methods
+      insertParagraph(search: string, content: string, style: Types.Document.Style): Methods
+      insertFormattedParagraph(
+        search: string,
+        paragraphItems: Types.Document.ParagraphItem[],
+        style: Types.Document.Style
+      ): Methods
+      insertListItem(search: string, content: string, glyph: Types.Document.Glyph): Methods
+      insertFormattedListItem(
+        search: string,
+        paragraphItems: Types.Document.ParagraphItem[],
+        glyph: Types.Document.Glyph
+      ): Methods
+      removeElement(search: string): Methods
+      save(): void
+    }
+    type Static = {
+      CONTENT_SHAPE: Types.Document.ContentItem.Shapes
+      TEXT_FORMAT: Types.Document.ParagraphItem.Formats
+    }
+  }
+
+  namespace UiBridge {
+    interface Methods {
+      getStyles(styles: string[]): string
+      getScripts(scripts: string[]): string
+      getComponent(params: { component: Types.Ui.Component; data?: Record<string, *>; parent?: string }): string
+      _callApi<F extends Types.Ui.Api.Factories, A extends keyof F>(params: {
+        factories: F
+        action: A
+        input?: Types.Ui.Api.InputFor<F, A>
+      }): Types.Ui.Api.OutputFor<F, A>
+    }
+    type Static = {
+      COMPONENT_SHAPES: Types.Ui.Component.Shapes
     }
   }
 }
-//#region DependencyManager
-namespace Lib.DependencyManager {
-  interface Methods {
-    register<T extends Types.ClassDef>(classDef: T, factory: () => InstanceType<T>): void
-    resolve<T extends Types.ClassDef>(classDef: T): InstanceType<T>
-  }
-}
+
 const DependencyManager: { new (): Lib.DependencyManager.Methods }
-//#endregion
-//#region SpreadsheetsManager
-namespace Lib.SpreadsheetsManager {
-  type Deps = { lockTimeout?: number }
-  interface Methods {
-    get(params: Types.Spreadsheet.Config & { filters?: Types.Spreadsheet.Filter.Dictionary }): Types.Spreadsheet.Data[]
-    save(params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data; idFields: string[] }): void
-    insert(params: Types.Spreadsheet.Config & { data: Types.Spreadsheet.Data[] }): void
-    update(
-      params: Types.Spreadsheet.Config & {
-        set: Types.Spreadsheet.Data[]
-        idFields: string[]
-        criteria?: Types.Spreadsheet.Filter.Dictionary
-      }
-    ): void
-    replace(
-      params: Types.Spreadsheet.Config & {
-        data: Types.Spreadsheet.Data[]
-        criteria?: Types.Spreadsheet.Filter.Dictionary
-      }
-    ): void
-    delete(params: Types.Spreadsheet.Config & { criteria?: Types.Spreadsheet.Filter.Dictionary }): void
-  }
-}
 const SpreadsheetsManager: { new (deps: Lib.SpreadsheetsManager.Deps): Lib.SpreadsheetsManager.Methods }
-//#endregion
-//#region CacheManager
-namespace Lib.CacheManager {
-  interface Methods {
-    set<T>(params: Types.Cache.Element<T> & { value: T }): void
-    get<T>(params: Types.Cache.Element<T>): T | undefined
-    flush(params: { scope: Types.ClassDef }): void
-    handle<T>(params: Types.Cache.Element<T> & { handler: () => T }): T
-  }
-}
 const CacheManager: { new (): Lib.CacheManager.Methods }
-//#endregion
-//#region AppClient
-namespace Lib.AppClient {
-  interface Methods {
-    call(params: Types.AppCall.Request): Types.AppCall.Response
-    callWithAuth(params: Types.AppCall.Request): Types.AppCall.Response
-  }
-}
 const AppClient: { new (): Lib.AppClient.Methods }
-//#endregion
-//#region DocumentEditor
-namespace Lib.DocumentEditor {
-  type Deps = { id?: string; key?: string }
-  interface Methods {
-    replaceText(search: string, replace: string): Methods
-    insertContentBlock(search: string, block: Types.Document.ContentBlock): Methods
-    insertParagraph(search: string, content: string, style: Types.Document.Style): Methods
-    insertFormattedParagraph(
-      search: string,
-      paragraphItems: Types.Document.ParagraphItem[],
-      style: Types.Document.Style
-    ): Methods
-    insertListItem(search: string, content: string, glyph: Types.Document.Glyph): Methods
-    removeElement(search: string): Methods
-    save(): void
-  }
-  type Static = {
-    CONTENT_SHAPE: Types.Document.ContentItem.Shapes
-    TEXT_FORMAT: Types.Document.ParagraphItem.Formats
-  }
-}
 const DocumentEditor: { new (deps: Lib.DocumentEditor.Deps): Lib.DocumentEditor.Methods } & Lib.DocumentEditor.Static
-//#endregion
-//#region UiBridge
-namespace Lib.UiBridge {
-  interface Methods {
-    getStyles(styles: string[]): string
-    getScripts(scripts: string[]): string
-    getComponent(params: { component: Types.Ui.Component; data?: Record<string, *>; parent?: string }): string
-    _callApi<F extends Types.Ui.Api.Factories, A extends keyof F>(params: {
-      factories: F
-      action: A
-      input?: Types.Ui.Api.InputFor<F, A>
-    }): Types.Ui.Api.OutputFor<F, A>
-  }
-  type Static = {
-    COMPONENT_SHAPES: Types.Ui.Component.Shapes
-  }
-}
 const UiBridge: { new (): Lib.UiBridge.Methods } & Lib.UiBridge.Static
-//#endregion
-//#endregion
