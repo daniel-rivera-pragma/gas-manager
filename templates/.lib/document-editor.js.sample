@@ -50,12 +50,13 @@ class DocumentEditor {
    * @param {Lib.Types.Document.ContentBlock} block
    */
   insertContentBlock(search, block) {
-    const { PARAGRAPH, LIST_ITEM, FORMATTED_PARAGRAPH } = DocumentEditor.CONTENT_SHAPE
+    const { PARAGRAPH, LIST_ITEM, FORMATTED_PARAGRAPH, FORMATTED_LIST_ITEM } = DocumentEditor.CONTENT_SHAPE
     block.forEach((item) => {
       if (item.shape === PARAGRAPH) this.insertParagraph(search, item.content, item.style)
       else if (item.shape === LIST_ITEM) this.insertListItem(search, item.content, item.glyph)
       else if (item.shape === FORMATTED_PARAGRAPH)
         this.insertFormattedParagraph(search, item.paragraphItems, item.style)
+      else if (item.shape === FORMATTED_LIST_ITEM) this.insertFormattedListItem(search, item.paragraphItems, item.glyph)
       else throw new Error('Unexpected invalid content block shape')
     })
     return this
@@ -141,6 +142,7 @@ DocumentEditor.CONTENT_SHAPE = {
   PARAGRAPH: 'paragraph',
   LIST_ITEM: 'list-item',
   FORMATTED_PARAGRAPH: 'formatted-paragraph',
+  FORMATTED_LIST_ITEM: 'formatted-list-item',
 }
 
 /** @type {Lib.Types.Document.ParagraphItem.Formats} */

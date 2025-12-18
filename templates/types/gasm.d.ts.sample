@@ -84,6 +84,7 @@ namespace Lib {
           PARAGRAPH: 'paragraph'
           LIST_ITEM: 'list-item'
           FORMATTED_PARAGRAPH: 'formatted-paragraph'
+          FORMATTED_LIST_ITEM: 'formatted-list-item'
         }
         type Shape = Shapes[keyof Shapes]
       }
@@ -91,6 +92,7 @@ namespace Lib {
         | { shape: ContentItem.Shapes['PARAGRAPH']; content: string; style: Style }
         | { shape: ContentItem.Shapes['LIST_ITEM']; content: string; glyph: Glyph }
         | { shape: ContentItem.Shapes['FORMATTED_PARAGRAPH']; paragraphItems: ParagraphItem[]; style: Style }
+        | { shape: ContentItem.Shapes['FORMATTED_LIST_ITEM']; paragraphItems: ParagraphItem[]; glyph: Glyph }
       type ContentBlock = ContentItem[]
     }
 
