@@ -12,6 +12,6 @@
       "/*": ["./*"]
     }
   },
-  "include": ["*.js", "src/**/*.js", "tests/**/*.test.js", "**/*.d.ts"],
+  "include": ["*.js", "src/**/*.js", "src/.**/*.js", "tests/**/*.test.js", "**/*.d.ts"],
   "exclude": ["node_modules", "coverage", ".vscode", ".gemini"]
 }
