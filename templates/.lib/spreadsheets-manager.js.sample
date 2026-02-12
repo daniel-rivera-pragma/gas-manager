@@ -1,7 +1,8 @@
 /** @implements {Lib.SpreadsheetsManager.Methods} */
 class SpreadsheetsManager {
-  /** @param {Lib.SpreadsheetsManager.Deps} deps */
-  constructor({ lockTimeout = 10000 }) {
+  /** @param {Lib.SpreadsheetsManager.Deps} [deps] */
+  constructor(deps) {
+    const { lockTimeout = 10000 } = deps ?? {}
     this._lockTimeout = lockTimeout
     /** @type {Map<string, GoogleAppsScript.Spreadsheet.Spreadsheet>} */
     this._spreadsheets = new Map()
@@ -10,8 +11,8 @@ class SpreadsheetsManager {
   }
 
   /** @param {Lib.Types.Spreadsheet.Config & {filters?: Lib.Types.Spreadsheet.Filter.Dictionary}} params */
-  get({ key, sheetName, filters }) {
-    const { sheet, headers } = this._getSheetNHeaders(key, sheetName)
+  get({ key, id, sheetName, filters }) {
+    const { sheet, headers } = this._getSheetNHeaders({ key, id, sheetName })
     if (filters === undefined) return this._get(this._getAllRows(sheet), (row) => row, headers)
     const { search, indexedMap } = this._parseFilters(filters, headers)
     if (search === null) return this._get(this._getAllRows(sheet), (row) => row, headers, indexedMap)
@@ -97,8 +98,8 @@ class SpreadsheetsManager {
   //#endregion
 
   /** @param {Lib.Types.Spreadsheet.Config & {data: Lib.Types.Spreadsheet.Data; idFields: string[]}} params */
-  save({ key, sheetName, data, idFields }) {
-    const { sheet, headers } = this._getSheetNHeaders(key, sheetName)
+  save({ key, id, sheetName, data, idFields }) {
+    const { sheet, headers } = this._getSheetNHeaders({ key, id, sheetName })
     const firstId = idFields.shift()
     if (firstId === undefined) {
       this._save(sheet, this._dataToRow(data, headers))
@@ -143,9 +144,9 @@ class SpreadsheetsManager {
   //#endregion
 
   /** @param {Lib.Types.Spreadsheet.Config & {data: Lib.Types.Spreadsheet.Data[]}} params */
-  insert({ key, sheetName, data }) {
+  insert({ key, id, sheetName, data }) {
     if (data.length <= 0) return
-    const { sheet, headers } = this._getSheetNHeaders(key, sheetName)
+    const { sheet, headers } = this._getSheetNHeaders({ key, id, sheetName })
     const newRows = data.map((item) => this._dataToRow(item, headers))
     this._insert(sheet, newRows)
   }
@@ -166,9 +167,9 @@ class SpreadsheetsManager {
   //#endregion
 
   /** @param {Lib.Types.Spreadsheet.Config & {set: Lib.Types.Spreadsheet.Data[]; idFields: string[]; criteria?: Lib.Types.Spreadsheet.Filter.Dictionary}} params */
-  update({ key, sheetName, set, idFields, criteria }) {
+  update({ key, id, sheetName, set, idFields, criteria }) {
     if (set.length <= 0) throw new Error('Unexepected empty set')
-    const { sheet, headers } = this._getSheetNHeaders(key, sheetName)
+    const { sheet, headers } = this._getSheetNHeaders({ key, id, sheetName })
     if (criteria === undefined) this._updateWithoutCriteria(sheet, headers, set, idFields)
     else this._updateWithCriteria(sheet, headers, set, idFields, criteria)
   }
@@ -321,9 +322,9 @@ class SpreadsheetsManager {
   //#endregion
 
   /** @param {Lib.Types.Spreadsheet.Config & {data: Lib.Types.Spreadsheet.Data[]; criteria?: Lib.Types.Spreadsheet.Filter.Dictionary}} params */
-  replace({ key, sheetName, data, criteria = {} }) {
+  replace({ key, id, sheetName, data, criteria = {} }) {
     if (data.length <= 0) return
-    const { sheet, headers } = this._getSheetNHeaders(key, sheetName)
+    const { sheet, headers } = this._getSheetNHeaders({ key, id, sheetName })
     const newRows = data.map((item) => this._dataToRow(item, headers))
     if (Object.keys(criteria).length <= 0) this._deleteAll(sheet)
     else {
@@ -335,8 +336,8 @@ class SpreadsheetsManager {
   }
 
   /** @param {Lib.Types.Spreadsheet.Config & {criteria?: Lib.Types.Spreadsheet.Filter.Dictionary}} params */
-  delete({ key, sheetName, criteria = {} }) {
-    const { sheet, headers } = this._getSheetNHeaders(key, sheetName)
+  delete({ key, id, sheetName, criteria = {} }) {
+    const { sheet, headers } = this._getSheetNHeaders({ key, id, sheetName })
     if (Object.keys(criteria).length <= 0) {
       this._deleteAll(sheet)
       return
@@ -614,15 +615,14 @@ class SpreadsheetsManager {
   }
 
   /**
-   * @param {string} spreadsheetKey
-   * @param {string} sheetName
+   * @param {{ key?: string; id?: string; sheetName: string }} params
    * @returns {{
    * sheet: GoogleAppsScript.Spreadsheet.Sheet
    * headers: Lib.Types.Spreadsheet.IndexForKeyMap
    * }}
    */
-  _getSheetNHeaders(spreadsheetKey, sheetName) {
-    const sheet = this._getSheet(spreadsheetKey, sheetName)
+  _getSheetNHeaders({ key, id, sheetName }) {
+    const sheet = this._getSheet({ key, id, sheetName })
     const headers = this._getHeaders(sheet)
     return { sheet, headers }
   }
@@ -648,43 +648,45 @@ class SpreadsheetsManager {
   }
 
   /**
-   * @param {string} spreadsheetKey
-   * @param {string} sheetName
+   * @param {{ key?: string; id?: string; sheetName: string }} params
    * @returns {GoogleAppsScript.Spreadsheet.Sheet}
    */
-  _getSheet(spreadsheetKey, sheetName) {
-    const key = `${spreadsheetKey}::${sheetName}`
-    const sheet = this._sheets.get(key)
+  _getSheet({ key, id, sheetName }) {
+    const cacheKey = id === undefined ? `${key ?? Utilities.getUuid()}::${sheetName}` : `${id}::${sheetName}`
+    const sheet = this._sheets.get(cacheKey)
     if (sheet !== undefined) return sheet
-    const spreadsheet = this._getSpreadsheet(spreadsheetKey)
+    const spreadsheet = this._getSpreadsheet({ key, id })
     const newSheet = spreadsheet.getSheetByName(sheetName)
     if (newSheet === null) throw new Error(`No sheet '${sheetName}' found at spreadsheet '${spreadsheet.getName()}'`)
-    this._sheets.set(key, newSheet)
+    this._sheets.set(cacheKey, newSheet)
     return newSheet
   }
 
   /**
-   * @param {string} spreadsheetKey
+   * @param {{key?: string; id?: string}} params
    * @returns {GoogleAppsScript.Spreadsheet.Spreadsheet}
    */
-  _getSpreadsheet(spreadsheetKey) {
-    const spreadsheet = this._spreadsheets.get(spreadsheetKey)
+  _getSpreadsheet({ key, id }) {
+    const cacheKey = id === undefined ? `${key ?? Utilities.getUuid()}` : `${id}`
+    const spreadsheet = this._spreadsheets.get(cacheKey)
     if (spreadsheet !== undefined) return spreadsheet
-    const spreadsheetId = this._getSpreadsheetId(spreadsheetKey)
+    const spreadsheetId = this._getSpreadsheetId({ key, id })
     const newSpreadsheet = SpreadsheetApp.openById(spreadsheetId)
-    this._spreadsheets.set(spreadsheetKey, newSpreadsheet)
+    this._spreadsheets.set(cacheKey, newSpreadsheet)
     return newSpreadsheet
   }
 
   /**
-   * @param {string} spreadsheetKey
+   * @param {{key?: string; id?: string}} params
    * @returns {string}
    */
-  _getSpreadsheetId(spreadsheetKey) {
-    const id = PropertiesService.getScriptProperties().getProperty(spreadsheetKey)
-    if (id === null) throw new Error(`No id found for key ${spreadsheetKey}`)
-    if (id === '') throw new Error(`Id for key ${spreadsheetKey} is empty`)
-    return id
+  _getSpreadsheetId({ key, id }) {
+    if (id !== undefined) return id
+    if (key === undefined) throw new Error('No key or id provided to get spreadsheet id')
+    const spreadsheetId = PropertiesService.getScriptProperties().getProperty(key)
+    if (spreadsheetId === null) throw new Error(`No id found for key ${key}`)
+    if (spreadsheetId === '') throw new Error(`Id for key ${key} is empty`)
+    return spreadsheetId
   }
 
   //#endregion

@@ -45,7 +45,7 @@ namespace Lib {
     }
 
     namespace Spreadsheet {
-      type Config = { key: string; sheetName: string }
+      type Config = { key?: string; id?: string; sheetName: string }
       type Row = Array<*>
       type Data = Record<string, *>
       type IndexForKeyMap = Map<string, number>
@@ -202,7 +202,7 @@ namespace Lib {
 }
 
 const DependencyManager: { new (): Lib.DependencyManager.Methods }
-const SpreadsheetsManager: { new (deps: Lib.SpreadsheetsManager.Deps): Lib.SpreadsheetsManager.Methods }
+const SpreadsheetsManager: { new (deps?: Lib.SpreadsheetsManager.Deps): Lib.SpreadsheetsManager.Methods }
 const CacheManager: { new (): Lib.CacheManager.Methods }
 const AppClient: { new (): Lib.AppClient.Methods }
 const DocumentEditor: { new (deps: Lib.DocumentEditor.Deps): Lib.DocumentEditor.Methods } & Lib.DocumentEditor.Static
